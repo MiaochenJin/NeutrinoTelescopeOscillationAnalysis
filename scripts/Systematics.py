@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from SimReader import Reader
 from utils import *
 
+# class IC_Systematics()
+
 class Systematics:
     def __init__(self, f_all, f_HPT, f_S, f_HE, f_tauCC, f_NC, s_mu_mubar, s_e_ebar, s_e_mu, delta_gamma, delta_theta):
         self.f_all = f_all

@@ -17,10 +17,18 @@ import numpy as np
  		self._exposure = exposure
  		self._filename = filename
  		mc = pd.read_parquet(filename)
- 		mu_mc = mc[(mc["MC_type"] == -1)]
- 		nu_mc = mc[(mc["MC_type"] != -1)]
- 		self._nu_mc = nu_mc
- 		self._mu_mc = mu_mc
+		if experiment == 'ORCA':
+			mu_mc = mc[(mc["MC_type"] == -1)]
+			nu_mc = mc[(mc["MC_type"] != -1)]
+			self._nu_mc = nu_mc
+			self._mu_mc = mu_mc
+			self._mc_et_bin = (np.array(nu_mc["true_energy_bin_num"])).astype(int)
+ 			self._mc_er_bin = (np.array(nu_mc["reco_energy_bin_num"])).astype(int)
+ 			self._mc_ct_bin = (np.array(nu_mc["true_cos_zenith_bin_num"])).astype(int)
+ 			self._mc_cr_bin = (np.array(nu_mc["reco_cos_zenith_bin_num"])).astype(int)
+		elif experiment == 'IceCube':
+			self._nu_mc = mc
+			self._mu_mc = None
  		# MC event information
  		self._mc_etrue = nu_mc["true_energy"]
  		self._mc_cthtrue = np.cos(nu_mc["true_zenith"])
@@ -29,11 +37,6 @@ import numpy as np
  		self._mc_weights = nu_mc["weight"]
  		self._mc_current = nu_mc["current_type"]
  		self._mc_morphology = nu_mc["pid"]
- 		if experiment == 'ORCA':
- 			self._mc_et_bin = (np.array(nu_mc["true_energy_bin_num"])).astype(int)
- 			self._mc_er_bin = (np.array(nu_mc["reco_energy_bin_num"])).astype(int)
- 			self._mc_ct_bin = (np.array(nu_mc["true_cos_zenith_bin_num"])).astype(int)
- 			self._mc_cr_bin = (np.array(nu_mc["reco_cos_zenith_bin_num"])).astype(int)
  		# experiment constants
  		self._livetime = 1.39
  		self._unit_norm = 1e4
@@ -55,10 +58,10 @@ import numpy as np
  		self._E_true_centers = (self._E_true_bins[1:] - self._E_true_bins[:-1]) / np.log(self._E_true_bins[1:] / self._E_true_bins[:-1])
  		self._cth_bin_centers = (self._cosT_true_bins[:-1] + self._cosT_true_bins[1:]) / 2
  		# flavor, nu type and other bining
- 		self._flavor_bins = np.array([12, 14, 16])  # νe, νμ, ντ
- 		self._nu_type_bins = np.array([-1, 1])  # Neutrino (1), Antineutrino (-1)
- 		self._interaction_bins = np.array([0, 1])  # CC (1), NC (0)
- 		self._morphology_bins = np.array([0, 1, 2])  # 3 Morphology categories
+ 		# self._flavor_bins = np.array([12, 14, 16])  # νe, νμ, ντ
+ 		# self._nu_type_bins = np.array([-1, 1])  # Neutrino (1), Antineutrino (-1)
+ 		# self._interaction_bins = np.array([0, 1])  # CC (1), NC (0)
+ 		# self._morphology_bins = np.array([0, 1, 2])  # 3 Morphology categories
  		print(f"Finished setting up experiment {experiment}")
  
  	# set up the atmospheric initial flux object
@@ -99,7 +102,6 @@ import numpy as np
  		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True)))
  		return rate
  	
- 
  	# obtain the mc event unweighted rate for all events given oscillation sterile parameters (phi * prob)
  	def GetOscillatedSterileRate(self, neutrino_flavors, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
  		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)

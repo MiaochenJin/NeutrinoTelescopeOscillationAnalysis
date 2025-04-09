@@ -2,7 +2,6 @@ import numpy as np
 from scipy.optimize import minimize
 from Systematics import Systematics
 
-
 def compute_chi2(pred_binned, asimov_binned):
     """
     Compute Poisson chi-squared.

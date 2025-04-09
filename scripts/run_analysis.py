@@ -83,7 +83,6 @@ chi2, best_fit_syst = get_minimized_chi2(
     asimov_binned, syst_nominal
 )
 
-
 # Save to CSV
 row = pd.DataFrame([{
     "sin2theta12": sin2t12, "sin2theta13": sin2t13, "sin2theta23": sin2t23,
