@@ -98,7 +98,33 @@ class Reader:
 			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
 		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True)))
 		return rate
-	
+
+	# obtain the mc event unweighted rate for all events given oscillation sterile parameters (phi * prob)
+	def GetOscillatedSterileRate(self, neutrino_flavors, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
+		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
+		nsq_atm.Set_rel_error(1.0e-4)
+		nsq_atm.Set_abs_error(1.0e-4)
+		nsq_atm.Set_MixingAngle(0, 1, asin(sqrt(t12))
+		nsq_atm.Set_MixingAngle(0, 2, asin(sqrt(t13))
+		nsq_atm.Set_MixingAngle(1, 2, asin(sqrt(t23))
+		nsq_atm.Set_MixingAngle(0, 3, asin(sqrt(t14)))
+		nsq_atm.Set_MixingAngle(1, 3, asin(sqrt(t24)))
+		nsq_atm.Set_MixingAngle(2, 3, asin(sqrt(t34)))			
+		nsq_atm.Set_SquareMassDifference(1, dm21)
+		nsq_atm.Set_SquareMassDifference(2, dm31)
+		nsq_atm.Set_SquareMassDifference(3, dm41)
+		if Ordering!='normal': # change mass difference for IO setting
+			AtmOsc.Set_SquareMassDifference(2,dm21-dm31)
+		nsq_atm.Set_CPPhase(0, 2, dcp)
+		nsq_atm.Set_CPPhase(1, 3, d24)
+		nsq_atm.Set_initial_state(self._atm_initial_flux,nsq.Basis.flavor)
+		nsq_atm.EvolveState()
+		rate = np.zeros_like(self._mc_weights)
+		for i in range(len(rate)):
+			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
+		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True)))
+		return rate
+		
 	# given the unweighted rates, multiply by weights and bin them 
 	def BinWeightedRate(self, unweighted_rate, E_shift = 1):
 		assert(len(unweighted_rate) == len(self._mc_weights))
