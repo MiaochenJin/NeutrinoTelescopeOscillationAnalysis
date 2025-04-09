@@ -31,14 +31,14 @@ def get_minimized_chi2(binned_nominal, E_true_bins, E_true_centers, cth_centers,
     Minimize chi2 over systematic parameters.
     """
     x0 = [
-        syst0.f_all, syst0.f_HPT, syst0.f_S, syst0.f_HE, syst0.f_mu,
+        syst0.f_all, syst0.f_HPT, syst0.f_S, syst0.f_HE,
         syst0.f_tauCC, syst0.f_NC, syst0.s_mu_mubar, syst0.s_e_ebar,
         syst0.s_e_mu, syst0.delta_gamma, syst0.delta_theta
     ]
 
     bounds = [
-        (0.8, 1.2), (0.8, 1.2), (0.8, 1.2), (0.8, 1.2), (0.5, 1.5),
-        (0.8, 1.2), (0.8, 1.2), (-0.1, 0.1), (-0.1, 0.1),
+        (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-1, 1),
+        (-0.5, 0.5), (-0.5, 0.5), (-0.1, 0.1), (-0.1, 0.1),
         (-0.1, 0.1), (-0.1, 0.1), (-0.1, 0.1)
     ]
 

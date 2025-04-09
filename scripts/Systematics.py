@@ -5,12 +5,12 @@ from SimReader import Reader
 from utils import *
 
 class Systematics:
-    def __init__(self, f_all, f_HPT, f_S, f_HE, f_mu, f_tauCC, f_NC, s_mu_mubar, s_e_ebar, s_e_mu, delta_gamma, delta_theta):
+    def __init__(self, f_all, f_HPT, f_S, f_HE, f_tauCC, f_NC, s_mu_mubar, s_e_ebar, s_e_mu, delta_gamma, delta_theta):
         self.f_all = f_all
         self.f_HPT = f_HPT
         self.f_S = f_S
         self.f_HE = f_HE
-        self.f_mu = f_mu
+        # self.f_mu = f_mu
         self.f_tauCC = f_tauCC
         self.f_NC = f_NC
         self.s_mu_mubar = s_mu_mubar
@@ -57,7 +57,7 @@ class Systematics:
         # Apply the correct mask for CC and NC bins
         affected_bins = (cc_energy_mask & cc_interaction_mask) | (nc_energy_mask & nc_interaction_mask)
         # Apply the systematic shift only to the affected bins
-        return binned_events + self.f_HPT * affected_bins * binned_events
+        return binned_events + self.f_HE * affected_bins * binned_events
 
     def apply_pid_normalization(self, binned_events, pid_index):
         affected_bins = np.zeros_like(binned_events)
