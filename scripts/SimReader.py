@@ -11,7 +11,7 @@ import numpy as np
  from utils import *
  
  class Reader:
- 	def __init__(self, source = None, experiment = 'ORCA', exposure = 1.39, filename = '../../datafiles/ORCA_MC.parquet'):
+ 	def __init__(self, source, experiment, exposure, filename):
  		# some global variables
  		self._experiment = experiment
  		self._exposure = exposure
@@ -27,6 +27,7 @@ import numpy as np
  			self._mc_ct_bin = (np.array(nu_mc["true_cos_zenith_bin_num"])).astype(int)
  			self._mc_cr_bin = (np.array(nu_mc["reco_cos_zenith_bin_num"])).astype(int)
 		elif experiment == 'IceCube':
+			nu_mc = pd.read_csv(filename)
 			self._nu_mc = mc
 			self._mu_mc = None
  		# MC event information
@@ -38,11 +39,11 @@ import numpy as np
  		self._mc_current = nu_mc["current_type"]
  		self._mc_morphology = nu_mc["pid"]
  		# experiment constants
- 		self._livetime = 1.39
+ 		self._livetime = exposure
  		self._unit_norm = 1e4
  		# flux related settings
  		self._atm_initial_flux = None
- 		self._flux_emin = 1 * units.GeV
+ 		self._flux_emin = 0.1 * units.GeV
  		self._flux_emax = 1e4 * units.GeV
  		self._flux_enodes = 100
  		self._flux_cthmin = -1.0
@@ -50,11 +51,17 @@ import numpy as np
  		self._flux_cnodes = 80
  		self._flux_energy_nodes = None
  		self._flux_cth_nodes = None
- 		# energy and zenith binning
- 		self._E_true_bins = np.load("../../datafiles/Analysis_Release_ORCA433kton-years/_E_true_bins.npy")
- 		self._E_reco_bins = np.load("../../datafiles/Analysis_Release_ORCA433kton-years/_E_reco_bins.npy")
- 		self._cosT_true_bins = np.load("../../datafiles/Analysis_Release_ORCA433kton-years/_cosT_true_bins.npy")
- 		self._cosT_reco_bins = np.linspace(-1, 0, 11)
+ 		# energy and zenith binning                
+		if experiment == 'ORCA':
+                        self._E_true_bins = np.load("../datafiles/ORCA/_E_true_bins.npy")
+                        self._E_reco_bins = np.load("../datafiles/ORCA/_E_reco_bins.npy")
+                        self._cosT_true_bins = np.load("../datafiles/ORCA/_cosT_true_bins.npy")
+                        self._cosT_reco_bins = np.linspace(-1, 0, 11)
+                elif experiment == 'IceCube':
+                        self._E_reco_bins = np.logspace(0., 2., 21)
+                        self._E_true_bins = self._E_reco_bins
+                        self._cosT_reco_bins = np.linspace(-1, 1, 11)
+                        self._cosT_true_bins = self._cosT_reco_bins
  		self._E_true_centers = (self._E_true_bins[1:] - self._E_true_bins[:-1]) / np.log(self._E_true_bins[1:] / self._E_true_bins[:-1])
  		self._cth_bin_centers = (self._cosT_true_bins[:-1] + self._cosT_true_bins[1:]) / 2
  		# flavor, nu type and other bining
@@ -86,9 +93,9 @@ import numpy as np
  		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
  		nsq_atm.Set_rel_error(1.0e-4)
  		nsq_atm.Set_abs_error(1.0e-4)
- 		nsq_atm.Set_MixingAngle(0, 1, t12)
- 		nsq_atm.Set_MixingAngle(0, 2, t13)
- 		nsq_atm.Set_MixingAngle(1, 2, t23)
+ 		nsq_atm.Set_MixingAngle(0, 1, asin(sqrt(t12))
+ 		nsq_atm.Set_MixingAngle(0, 2, asin(sqrt(t13))
+ 		nsq_atm.Set_MixingAngle(1, 2, asin(sqrt(t23))
  		nsq_atm.Set_SquareMassDifference(1, dm21)
  		nsq_atm.Set_SquareMassDifference(2, dm31)
  		if Ordering!='normal': # change mass difference for IO setting
@@ -140,11 +147,17 @@ import numpy as np
  		)
  		binned_events = np.zeros(shape)
  		# Bin neutrino events
- 		for i in range(len(self._nu_mc)):
- 			te_idx = self._mc_et_bin[i] - 1
- 			re_idx = self._mc_er_bin[i] - 1
- 			tz_idx = self._mc_ct_bin[i] - 1
- 			rz_idx = self._mc_cr_bin[i] - 1
+		for i in range(len(self._nu_mc)):
+			if self._experiment == 'ORCA':
+				te_idx = self._mc_et_bin[i] - 1
+				re_idx = self._mc_er_bin[i] - 1
+				tz_idx = self._mc_ct_bin[i] - 1
+				rz_idx = self._mc_cr_bin[i] - 1
+			elif self._experiment == 'IceCube':
+				te_idx = np.digitize(self._mc_etrue[i], self._E_true_bins) - 1
+				re_idx = np.digitize(self._mc_ereco[i], self._E_reco_bins) - 1
+				tz_idx = np.digitize(self._mc_cthtrue[i], self._cosT_true_bins) - 1
+				rz_idx = np.digitize(self._mc_cthreco[i], self._cosT_reco_bins) - 1
  			n_idx = self._mc_nutype[i]
  			f_idx = self._mc_neuflavor[i]
  			i_idx = self._mc_current[i]
