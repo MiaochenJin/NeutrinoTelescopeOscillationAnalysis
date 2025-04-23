@@ -154,6 +154,9 @@ import numpy as np
 				tz_idx = self._mc_ct_bin[i] - 1
 				rz_idx = self._mc_cr_bin[i] - 1
 			elif self._experiment == 'IceCube':
+				print(self._E_true_bins)
+				print(self._E_reco_bins)
+				print(self._mc_etrue[i], self._mc_ereco[i])
 				te_idx = np.digitize(self._mc_etrue[i], self._E_true_bins) - 1
 				re_idx = np.digitize(self._mc_ereco[i], self._E_reco_bins) - 1
 				tz_idx = np.digitize(self._mc_cthtrue[i], self._cosT_true_bins) - 1
@@ -169,4 +172,5 @@ import numpy as np
  				print("Invalid index found in populating bins")
  				print(shape[0], shape[1], shape[2], shape[3])
  				print(te_idx, re_idx, tz_idx, rz_idx)
+				exit(0)
  		return binned_events
