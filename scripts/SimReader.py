@@ -11,8 +11,11 @@ from itertools import repeat
 from utils import *
  
 class Reader:
-	def __init__(self, source, experiment, exposure, filename):
+	def __init__(self, neutrino_flavors, source, experiment, exposure, filename):
+		self._units = nsq.Const()
+		self._interactions = False
 		# some global variables
+		self._neutrino_flavors = neutrino_flavors
 		self._experiment = experiment
 		self._exposure = exposure
 		self._filename = filename
@@ -46,8 +49,8 @@ class Reader:
 		self._unit_norm = 1e4
  		# flux related settings
 		self._atm_initial_flux = None
-		self._flux_emin = 1 * units.GeV
-		self._flux_emax = 1e3 * units.GeV
+		self._flux_emin = 1 * self._units.GeV
+		self._flux_emax = 1e3 * self._units.GeV
 		self._flux_enodes = 100
 		self._flux_cthmin = -1.0
 		self._flux_cthmax = 1.0
@@ -79,11 +82,10 @@ class Reader:
 		self._flux_energy_nodes = nsq.logspace(self._flux_emin, self._flux_emax, self._flux_enodes)
 		self._flux_cth_nodes = nsq.linspace(self._flux_cthmin, self._flux_cthmax, self._flux_cnodes)
 		flux = nuflux.makeFlux('IPhonda2014_spl_solmin')
-		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
-		AtmInitialFlux = np.zeros((len(self._flux_cth_nodes),len(self._flux_energy_nodes),2,neutrino_flavors))
-		for ic,cth in enumerate(nsq_atm.GetCosthRange()):
-			for ie,E in enumerate(nsq_atm.GetERange()):
-				nu_energy = E/units.GeV
+		AtmInitialFlux = np.zeros((len(self._flux_cth_nodes),len(self._flux_energy_nodes),2,self._neutrino_flavors))
+		for ic,cth in enumerate(self._flux_cth_nodes):
+			for ie,E in enumerate(self._flux_energy_nodes):
+				nu_energy = E / self._units.GeV
 				nu_cos_zenith = cth
 				for f in ['nue', 'numu']:
 					f_ = f_dict[f]
@@ -94,7 +96,7 @@ class Reader:
  
  	# obtain the mc event unweighted rate for all events given oscillation parameters (phi * prob)
 	def GetOscillatedRate(self, t12, t13, t23, dm21, dm31, dcp, Ordering='normal'):
-		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
+		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self._neutrino_flavors,nsq.NeutrinoType.both,self._interactions)
 		nsq_atm.Set_rel_error(1.0e-4)
 		nsq_atm.Set_abs_error(1.0e-4)
 		nsq_atm.Set_MixingAngle(0, 1, t12)
@@ -109,21 +111,21 @@ class Reader:
 		nsq_atm.EvolveState() # progress bar is hidden here
 		rate = np.zeros_like(self._mc_weights)
 		for i in range(len(rate)):
- 			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
+ 			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * self._units.GeV), int(self._mc_nutype[i]))
  		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True))
 		return rate
  	
  	# obtain the mc event unweighted rate for all events given oscillation sterile parameters (phi * prob)
-	def GetOscillatedSterileRate(self, neutrino_flavors, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
-		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
+	def GetOscillatedSterileRate(self, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
+		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self._neutrino_flavors,nsq.NeutrinoType.both,self._interactions)
 		nsq_atm.Set_rel_error(1.0e-4)
 		nsq_atm.Set_abs_error(1.0e-4)
-		nsq_atm.Set_MixingAngle(0, 1, asin(sqrt(t12)))
-		nsq_atm.Set_MixingAngle(0, 2, asin(sqrt(t13)))
-		nsq_atm.Set_MixingAngle(1, 2, asin(sqrt(t23)))
-		nsq_atm.Set_MixingAngle(0, 3, asin(sqrt(t14)))
-		nsq_atm.Set_MixingAngle(1, 3, asin(sqrt(t24)))
-		nsq_atm.Set_MixingAngle(2, 3, asin(sqrt(t34)))			
+		nsq_atm.Set_MixingAngle(0, 1, t12)
+		nsq_atm.Set_MixingAngle(0, 2, t13)
+		nsq_atm.Set_MixingAngle(1, 2, t23)
+		nsq_atm.Set_MixingAngle(0, 3, t14)
+		nsq_atm.Set_MixingAngle(1, 3, t24)
+		nsq_atm.Set_MixingAngle(2, 3, t34)			
 		nsq_atm.Set_SquareMassDifference(1, dm21)
 		nsq_atm.Set_SquareMassDifference(2, dm31)
 		nsq_atm.Set_SquareMassDifference(3, dm41)
@@ -135,7 +137,7 @@ class Reader:
 		nsq_atm.EvolveState()
 		rate = np.zeros_like(self._mc_weights)
 		for i in range(len(rate)):
- 			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
+ 			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * self._units.GeV), int(self._mc_nutype[i]))
  		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True)))
 		return rate
  		
