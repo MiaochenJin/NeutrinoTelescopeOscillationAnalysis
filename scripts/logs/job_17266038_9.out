@@ -1,0 +1,214 @@
+Netid State      Recv-Q Send-Q                                          Local Address:Port            Peer Address:Port          Process
+u_str ESTAB      0      0                                                           * 86048                      * 86049                
+u_str ESTAB      0      0                                                           * 487048582                  * 0                    
+u_str ESTAB      0      0                                                           * 482411738                  * 482411739            
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 64584                      * 55900                
+u_str ESTAB      0      0                                                           * 394857                     * 394856               
+u_str ESTAB      0      0                                                           * 59580                      * 64581                
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 83879                      * 40487                
+u_str ESTAB      0      0                                                           * 70807                      * 55679                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41052                      * 56499                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41068                      * 66752                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 21616                      * 22777                
+u_str ESTAB      0      0                                                           * 47448                      * 55673                
+u_str ESTAB      0      0                                                           * 482411743                  * 482411742            
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 64582                      * 27973                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41015                      * 56429                
+u_str ESTAB      0      0                                                           * 60953                      * 41006                
+u_str ESTAB      0      0                     /var/lib/sss/pipes/private/sbus-monitor 53018                      * 41130                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 55679                      * 70807                
+u_str ESTAB      0      0                                                           * 71002                      * 0                    
+u_str ESTAB      0      0                     /var/lib/sss/pipes/private/sbus-monitor 53019                      * 53337                
+u_str ESTAB      0      0                                                           * 83878                      * 83877                
+u_str ESTAB      0      0                                                           * 394850                     * 394849               
+u_str ESTAB      0      0                                                           * 27973                      * 64582                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 55523                      * 49392                
+u_str ESTAB      0      0                                                           * 394847                     * 394846               
+u_str ESTAB      0      0                                                           * 100383                     * 70883                
+u_str ESTAB      0      0                                                           * 61950                      * 83881                
+u_str ESTAB      0      0                                                           * 483667701                  * 0                    
+u_str ESTAB      0      0                                                           * 39072                      * 53017                
+u_str ESTAB      0      0                                                           * 523799064                  * 0                    
+u_str ESTAB      0      0                                                           * 41129                      * 61020                
+u_str ESTAB      0      0                                                           * 482411739                  * 482411738            
+u_str ESTAB      0      0                                                           * 86182                      * 41026                
+u_str ESTAB      0      0                                                           * 394750                     * 394749               
+u_str ESTAB      0      0                                                           * 61959                      * 39073                
+u_str ESTAB      0      0                                                           * 45356                      * 55685                
+u_str ESTAB      0      0                                                           * 66752                      * 41068                
+u_str ESTAB      0      0                                                           * 228973091                  * 0                    
+u_str ESTAB      0      0                                                           * 70879                      * 70880                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 55685                      * 45356                
+u_str ESTAB      0      0                                                           * 394856                     * 394857               
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 55677                      * 52996                
+u_str ESTAB      0      0                                                           * 40487                      * 83879                
+u_str ESTAB      0      0                                                           * 56499                      * 41052                
+u_str ESTAB      0      0                                                           * 483472689                  * 0                    
+u_str ESTAB      0      0                                                           * 55898                      * 0                    
+u_str ESTAB      0      0                                                           * 108708                     * 50414                
+u_str ESTAB      0      0                                                           * 523786525                  * 0                    
+u_str ESTAB      0      0                                                           * 52996                      * 55677                
+u_str ESTAB      0      0                                                           * 225196048                  * 225174291            
+u_str ESTAB      0      0                                                           * 66821                      * 41070                
+u_str ESTAB      0      0                                                           * 47458                      * 47457                
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 83881                      * 61950                
+u_str ESTAB      0      0                                                           * 394757                     * 394756               
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 50406                      * 68195                
+u_str ESTAB      0      0                                                           * 85331                      * 89101                
+u_str ESTAB      0      0                                                           * 524013104                  * 0                    
+u_str ESTAB      0      0                                                           * 224763321                  * 0                    
+u_str ESTAB      0      0                                                           * 394747                     * 394746               
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 70883                      * 100383               
+u_str ESTAB      0      0                                                           * 53335                      * 61019                
+u_str ESTAB      0      0                                                           * 49392                      * 55523                
+u_str ESTAB      0      0                                                           * 394756                     * 394757               
+u_str ESTAB      0      0                                                           * 22777                      * 21616                
+u_str ESTAB      0      0                                                           * 394849                     * 394850               
+u_str ESTAB      0      0                                                           * 59569                      * 55797                
+u_str ESTAB      0      0                                                           * 53337                      * 53019                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 50414                      * 108708               
+u_str ESTAB      0      0                                                           * 487048587                  * 0                    
+u_str ESTAB      0      0                                                           * 18600                      * 64586                
+u_str ESTAB      0      0                                                           * 86049                      * 86048                
+u_str ESTAB      0      0           /var/lib/sss/pipes/private/sbus-dp_rc.domain.2642 39073                      * 61959                
+u_str ESTAB      0      0      /var/lib/sss/pipes/private/sbus-dp_implicit_files.2641 70880                      * 70879                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 190650919                  * 190578670            
+u_str ESTAB      0      0                                           /run/rpcbind.sock 87251                      * 97152                
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 83880                      * 47462                
+u_str ESTAB      0      0                     /var/lib/sss/pipes/private/sbus-monitor 61958                      * 61018                
+u_str ESTAB      0      0                                                           * 57536                      * 57537                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41070                      * 66821                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41024                      * 36379                
+u_str ESTAB      0      0                                                           * 482411742                  * 482411743            
+u_str ESTAB      0      0                                                           * 394846                     * 394847               
+u_str ESTAB      0      0           /var/lib/sss/pipes/private/sbus-dp_rc.domain.2642 38076                      * 38075                
+u_str ESTAB      0      0                                                           * 483667704                  * 483667705            
+u_str ESTAB      0      0                                                           * 482411749                  * 482411750            
+u_str ESTAB      0      0                                                           * 225174290                  * 225174289            
+u_str ESTAB      0      0                                                           * 15564                      * 15565                
+u_str ESTAB      0      0                                                           * 83916                      * 39074                
+u_str ESTAB      0      0                                                           * 55900                      * 64584                
+u_str ESTAB      0      0                                                           * 68195                      * 50406                
+u_str ESTAB      0      0                                                           * 47462                      * 83880                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 89101                      * 85331                
+u_str ESTAB      0      0                                                           * 482308818                  * 0                    
+u_str ESTAB      0      0                                                           * 190578670                  * 190650919            
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41050                      * 58615                
+u_str ESTAB      0      0                                                           * 36379                      * 41024                
+u_str ESTAB      0      0                                                           * 225196040                  * 225171022            
+u_str ESTAB      0      0                                                           * 15565                      * 15564                
+u_str ESTAB      0      0      /var/lib/sss/pipes/private/sbus-dp_implicit_files.2641 61020                      * 41129                
+u_str ESTAB      0      0      /var/lib/sss/pipes/private/sbus-dp_implicit_files.2641 61019                      * 53335                
+u_str ESTAB      0      0                                                           * 489635996                  * 489635997            
+u_str ESTAB      0      0                                                           * 225174289                  * 225174290            
+u_str ESTAB      0      0                     /var/lib/sss/pipes/private/sbus-monitor 53017                      * 39072                
+u_str ESTAB      0      0                                                           * 58615                      * 41050                
+u_str ESTAB      0      0                                                           * 97152                      * 87251                
+u_str ESTAB      0      0                                                           * 482411750                  * 482411749            
+u_str ESTAB      0      0           /var/lib/sss/pipes/private/sbus-dp_rc.domain.2642 39074                      * 83916                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 55673                      * 47448                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41006                      * 60953                
+u_str ESTAB      0      0                                                           * 483667705                  * 483667704            
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 225171022                  * 225196040            
+u_str ESTAB      0      0                     /var/lib/sss/pipes/private/sbus-monitor 61954                      * 61953                
+u_str ESTAB      0      0                                                           * 523393960                  * 0                    
+u_str ESTAB      0      0                                                           * 41130                      * 53018                
+u_str ESTAB      0      0                                                           * 56429                      * 41015                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 55797                      * 59569                
+u_str ESTAB      0      0                                                           * 57537                      * 57536                
+u_str ESTAB      0      0                                                           * 489635997                  * 489635996            
+u_str ESTAB      0      0                                                           * 394746                     * 394747               
+u_str ESTAB      0      0                                                           * 61953                      * 61954                
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 64586                      * 18600                
+u_str ESTAB      0      0                                 /run/systemd/journal/stdout 41026                      * 86182                
+u_str ESTAB      0      0                                                           * 199579878                  * 0                    
+u_str ESTAB      0      0                                                           * 80067                      * 0                    
+u_str ESTAB      0      0                                       @/tmp/dbus-yEKPZ8BgIV 225174291                  * 225196048            
+u_str ESTAB      0      0                                                           * 394749                     * 394750               
+u_str ESTAB      0      0                                 /run/dbus/system_bus_socket 64581                      * 59580                
+u_str ESTAB      0      0                                                           * 47457                      * 47458                
+u_str ESTAB      0      0                                                           * 83877                      * 83878                
+u_str ESTAB      0      0                                                           * 61018                      * 61958                
+u_str ESTAB      0      0                                                           * 38075                      * 38076                
+udp   ESTAB      0      0                                            10.31.144.54%em2:bootpc          10.31.20.132:bootps               
+tcp   ESTAB      0      0                                                10.31.144.54:1019           10.242.62.227:988                  
+tcp   ESTAB      0      0                                                10.31.144.54:1012              10.31.9.82:49152                
+tcp   ESTAB      0      0                                                10.31.180.54:785            10.31.183.175:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:34748            10.31.21.16:11358                
+tcp   ESTAB      0      0                                                10.31.144.54:937             10.242.62.83:nfs                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:57288          35.186.228.49:https                
+tcp   ESTAB      0      0                                                10.31.144.54:1020              10.31.9.80:49152                
+tcp   ESTAB      0      0                                                10.31.144.54:58260            10.31.21.16:11360                
+tcp   ESTAB      0      0                                                10.31.144.54:accessnetwork  10.242.62.249:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:1008           10.242.62.213:988                  
+tcp   ESTAB      0      0                                                10.31.144.54:40382          10.140.42.101:4222                 
+tcp   ESTAB      0      0                                                10.31.144.54:ssh           10.242.104.153:55262                
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36066                
+tcp   ESTAB      0      0                                                10.31.144.54:1009           10.242.62.214:988                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36028                
+tcp   ESTAB      0      0                                                10.31.144.54:35688           10.242.67.77:squid                
+tcp   ESTAB      0      0                                                10.31.144.54:exp1            10.31.144.54:988                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36102                
+tcp   ESTAB      0      0                                                10.31.144.54:988             10.31.144.54:exp1                 
+tcp   ESTAB      0      0                                                10.31.144.54:1015              10.31.9.81:49152                
+tcp   ESTAB      0      0                                                10.31.144.54:988             10.31.144.54:exp2                 
+tcp   ESTAB      0      0                                                10.31.144.54:39540            10.31.21.17:h323callsigalt       
+tcp   ESTAB      0      0                                                10.31.144.54:781            10.242.62.253:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:54962           10.242.67.77:squid                
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36042                
+tcp   ESTAB      0      0                                                10.31.144.54:1013              10.31.9.81:49153                
+tcp   ESTAB      0      0                                                10.31.180.54:974             10.31.10.142:nfs                  
+tcp   ESTAB      0      0                                                10.31.180.54:nmap            10.31.10.144:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:realm-rusd     10.242.62.254:nfs                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36118                
+tcp   ESTAB      0      0                                                10.31.144.54:surf           10.242.62.213:988                  
+tcp   ESTAB      0      0                                                   127.0.0.1:54862              127.0.0.1:40091                
+tcp   ESTAB      0      0                                                10.31.144.54:35048          10.242.26.103:msft-gc              
+tcp   ESTAB      0      0                                                10.31.144.54:1008           10.242.62.214:988                  
+tcp   ESTAB      0      0                                                10.31.180.54:805             10.31.10.143:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:822            10.242.62.248:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:1017              10.31.9.80:49153                
+tcp   ESTAB      0      456                                              10.31.144.54:mdbs_daemon    10.242.62.250:nfs                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36008                
+tcp   ESTAB      0      0                                                10.31.180.54:924             10.31.10.148:nfs                  
+tcp   LAST-ACK   1      1                                                10.31.144.54:33646           10.242.67.77:squid                
+tcp   ESTAB      0      0                                                10.31.144.54:9190            10.31.144.54:41582                
+tcp   ESTAB      0      0                                                10.31.144.54:41582           10.31.144.54:9190                 
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:36006           10.242.67.77:squid                
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:36034           10.242.67.77:squid                
+tcp   ESTAB      0      0                                                10.31.144.54:1009           10.242.62.228:988                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36090                
+tcp   ESTAB      0      0                                                10.31.144.54:elcsd          10.242.62.246:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:surf           10.242.62.214:988                  
+tcp   ESTAB      0      0                                                10.31.144.54:35746         10.242.104.153:9743                 
+tcp   ESTAB      0      0                                                10.31.180.54:757             10.31.10.145:nfs                  
+tcp   ESTAB      0      0                                                   127.0.0.1:40579              127.0.0.1:56414                
+tcp   ESTAB      0      0                                                10.31.144.54:exp1           10.242.62.227:988                  
+tcp   ESTAB      0      0                                                10.31.180.54:iris-xpcs       10.31.10.141:nfs                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36152                
+tcp   LAST-ACK   1      1                                                10.31.144.54:50610           10.242.67.77:squid                
+tcp   ESTAB      0      0                                                10.31.144.54:779             10.31.20.151:nfs                  
+tcp   ESTAB      0      0                                                   127.0.0.1:56414              127.0.0.1:40579                
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:36714           10.242.67.77:squid                
+tcp   ESTAB      0      0                                                10.31.144.54:exp2            10.31.144.54:988                  
+tcp   ESTAB      0      0                                                   127.0.0.1:40091              127.0.0.1:54862                
+tcp   ESTAB      0      0                                                10.31.144.54:33861            10.242.72.6:shell                
+tcp   ESTAB      0      0                                                10.31.144.54:1011              10.31.9.82:49153                
+tcp   ESTAB      0      0                                                10.31.144.54:50490           3.130.129.92:https                
+tcp   ESTAB      0      0                                                10.31.144.54:1009           10.242.62.213:988                  
+tcp   ESTAB      0      0                                                10.31.144.54:38976          35.186.228.49:https                
+tcp   ESTAB      0      0                                                10.31.144.54:1008           10.242.62.228:988                  
+tcp   ESTAB      0      0                                                10.31.144.54:surf           10.242.62.228:988                  
+tcp   ESTAB      0      0                                                10.31.144.54:1023              10.31.9.81:24007                
+tcp   ESTAB      0      0                                                10.31.144.54:exp2           10.242.62.227:988                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:56156           10.242.67.77:squid                
+tcp   ESTAB      0      0                                                10.31.144.54:34304         10.242.104.153:9741                 
+tcp   ESTAB      0      0                                                10.31.180.54:889             10.31.10.147:nfs                  
+tcp   ESTAB      0      0                                                10.31.144.54:49022            10.31.21.17:11718                
+tcp   ESTAB      0      0                                                10.31.144.54:974            10.242.62.252:nfs                  
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36142                
+tcp   CLOSE-WAIT 1      0                                                10.31.144.54:6818            10.31.20.151:36030                
+[INFO] Running Experiment IC
+[INFO] Using set of systematics ['FluxNormalization_Below1GeV', 'FluxNormalization_Above1GeV', 'FluxTilt', 'NuNubarRatio', 'FlavorRatio', 'ZenithFluxUp', 'ZenithFluxDown', 'IceAbsorption', 'IceScattering', 'OffSet', 'OptEffHeadon', 'OptEffLateral', 'OptEffOverall', 'CoinFraction', 'XSecNuTau', 'NCoverCC', 'AxialMass', 'NCHad']
+[INFO] Running grid point #9: sin2theta23=0.30000, dm31=2.600000e-03
+[INFO] Point #9 complete with minmized chi squred = 121.34679091372779. Result saved to ../results/0528/point_9.csv

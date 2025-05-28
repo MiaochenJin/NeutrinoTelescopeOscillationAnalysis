@@ -9,7 +9,7 @@ from itertools import repeat
 from math import asin, sqrt
 from itertools import repeat
 from utils import *
-
+from scipy.interpolate import griddata
 class Simulation:
 	def __init__(self, experiment = 'ORCA', livetime = 1.39, filename = '../datafiles/ORCA/ORCA_MC.parquet'):
 		# some global variables
@@ -35,21 +35,24 @@ class Simulation:
 			self._nu_mc = mc
 			self._mu_mc = None
 			self._num_morphology = 2
-			self._E_true_bins = np.logspace(-1, 4, 18, endpoint = True)
+			self._E_true_bins = np.logspace(np.log10(1), np.log10(1e4), 40+1, endpoint = True)
 			self._E_reco_bins = self._E_true_bins
-			self._cosT_true_bins = np.linspace(-1, 1, 11)
-			self._cosT_reco_bins = np.linspace(-1, 1, 11)
+			self._cosT_true_bins = np.array([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+			self._cosT_reco_bins = np.array([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 		# MC event information
-		self._num_entries = len(self._nu_mc)
-		self._mc_etrue = self._nu_mc["true_energy"]
-		self._mc_cthtrue = np.cos(self._nu_mc["true_zenith"])
-		self._mc_ereco = self._nu_mc["reco_energy"]
-		self._mc_cthreco = np.cos(self._nu_mc["reco_zenith"])
-		self._mc_nutype = self._nu_mc["pdg"].apply(lambda pdg: nuflux_dict[pdg][0])
-		self._mc_neuflavor = self._nu_mc["pdg"].apply(lambda pdg: nuflux_dict[pdg][1])
-		self._mc_weights = self._nu_mc["weight"]
-		self._mc_current = self._nu_mc["current_type"]
-		self._mc_morphology = self._nu_mc["pid"]
+		condition = (self._nu_mc["true_energy"] > 1) & (self._nu_mc["true_energy"] < 1e3) & (self._nu_mc["reco_energy"] > 1)
+		self._num_entries = len(self._nu_mc[condition])
+		self._mc_etrue = np.array(self._nu_mc["true_energy"][condition])
+		self._mc_cthtrue = np.array(np.cos(self._nu_mc["true_zenith"])[condition])
+		self._mc_ereco = np.array(self._nu_mc["reco_energy"][condition])
+		self._mc_cthreco = np.array(np.cos(self._nu_mc["reco_zenith"])[condition])
+		self._mc_nutype = np.array(self._nu_mc["pdg"].apply(lambda pdg: nuflux_dict[int(pdg)][0])[condition])
+		self._mc_neuflavor = np.array(self._nu_mc["pdg"].apply(lambda pdg: nuflux_dict[int(pdg)][1])[condition])
+		self._mc_weights = np.array(self._nu_mc["weight"][condition])
+		self._mc_current = np.array(self._nu_mc["current_type"][condition])
+		self._mc_morphology = np.array(self._nu_mc["pid"][condition])
+		self._mc_interaction = np.array(self._nu_mc["interaction_type"][condition])
+
 		# experiment constants
 		self._livetime = livetime
 		self._unit_norm = 1e4
@@ -61,7 +64,7 @@ class Simulation:
 		self._flux_enodes = 100
 		self._flux_cthmin = -1.0
 		self._flux_cthmax = 1.0
-		self._flux_cnodes = 80
+		self._flux_cnodes = 40
 		self._flux_energy_nodes = None
 		self._flux_cth_nodes = None
 		# energy and zenith binning
@@ -72,7 +75,6 @@ class Simulation:
 		# storage room for the best fit unweighted rates, filled in once per analysis
 		self._BF_rates = None
 		self._BF_rates_weighted_binned = None
-		print(f"Finished setting up experiment {experiment}")
 
 	# set up the atmospheric initial flux object
 	def SetInitialFlux(self):
@@ -107,9 +109,9 @@ class Simulation:
 		nsq_atm.Set_initial_state(self._atm_initial_flux,nsq.Basis.flavor)
 		nsq_atm.EvolveState() # progress bar is hidden here
 		rate = np.zeros_like(self._mc_weights)
-		for i in range(len(rate)):
-			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * self._unit), int(self._mc_nutype[i]))
-		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True)))
+		# for i in range(len(rate)):
+		# 	rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * self._unit), int(self._mc_nutype[i]))
+		rate = list(map(nsq_atm.EvalFlavor, (self._mc_neuflavor.astype(int).tolist()), (self._mc_cthtrue.astype(float).tolist()), (self._mc_etrue*self._unit).astype(float).tolist(), (self._mc_nutype.astype(int).tolist()), repeat(True)))
 		return rate
 
 	# obtain the mc event unweighted rate for all events given oscillation sterile parameters (phi * prob)
@@ -205,3 +207,103 @@ class Simulation:
 		self._BF_rates_weighted_binned = self.BinWeightedRate3DFlatten(self._BF_rates) # no E shift needed
 		self._cut_bins = self._BF_rates_weighted_binned > 4 # cut all bins with fewer than 4 events
 		self._BF_rates_weighted_binned = self._BF_rates_weighted_binned[self._cut_bins]
+
+	# method to deal with IC systematics
+	def ReadDetSystTables(self, syst):
+		if self._experiment != 'IC':
+			print("skipping: IC systematics incorrectly loading for experiment ", self._experiment)
+			return
+		
+		Ebin = dict({0 : self._E_true_bins, 1 : self._E_true_bins})
+		Zbin = dict({0 : self._cosT_true_bins, 1 : self._cosT_true_bins})
+		cut = self._cut_bins
+		hp_nue_cc = pd.read_csv("../datafiles/IC/hyperplanes_nue_cc.csv")
+		hp_numu_cc = pd.read_csv("../datafiles/IC/hyperplanes_numu_cc.csv")
+		hp_nutau_cc = pd.read_csv("../datafiles/IC/hyperplanes_nutau_cc.csv")
+		hp_nu_nc = pd.read_csv("../datafiles/IC/hyperplanes_all_nc.csv")
+
+		method = 'nearest'
+
+		grid_cz = np.array(hp_nue_cc['reco_coszen'])
+		grid_Er =  np.array(hp_nue_cc['reco_energy'])
+		pid_nue =  np.array(hp_nue_cc['pid'])
+		ICSyst = [ "offset", "ice_absorption", "ice_scattering", "opt_eff_headon", "opt_eff_lateral", "opt_eff_overall", "coin_fraction"]
+		if syst not in ICSyst:
+			print('Systematic source not known for IC.')
+		
+		# for syst in ICSyst:
+		offset_nueCC = np.array(hp_nue_cc['offset'])
+		offset_numuCC =  np.array(hp_numu_cc['offset'])
+		offset_nutauCC =  np.array(hp_nutau_cc['offset'])
+		offset_NC =  np.array(hp_nu_nc['offset'])
+
+		values_nueCC =  np.array(hp_nue_cc[syst]) / offset_nueCC
+		values_numuCC =  np.array(hp_numu_cc[syst]) / offset_numuCC
+		values_nutauCC =  np.array(hp_nutau_cc[syst]) / offset_nutauCC
+		values_NC =  np.array(hp_nu_nc[syst]) / offset_NC
+
+		dic = {}
+		nuecc = np.array([])
+		numucc = np.array([])
+		nutaucc = np.array([])
+		nc = np.array([])
+
+		for sample in Ebin:
+			c = pid_nue==sample
+			points = np.array([grid_cz[c],grid_Er[c]]).T
+
+			nue = values_nueCC[c]
+			numu = values_numuCC[c]
+			nutau = values_nutauCC[c]
+			nuNC = values_NC[c]
+
+			cz = Zbin[sample]
+			e = Ebin[sample]
+			zbin = cz[:-1] + np.diff(cz)/2
+			ebin = e[:-1] + np.diff(e)/2
+
+			newCz, newEr = np.meshgrid(zbin,ebin)
+
+			nuecc = np.append(nuecc,griddata(points, nue, (newCz, newEr), method=method))
+			numucc = np.append(numucc,griddata(points, numu, (newCz, newEr), method=method))
+			nutaucc = np.append(nutaucc,griddata(points, nutau, (newCz, newEr), method=method))
+			nc = np.append(nc,griddata(points, nuNC, (newCz, newEr), method=method))
+
+		if len(cut)>0:
+			dic['nueCC'] = nuecc.reshape(-1)[cut]
+			dic['numuCC'] = numucc.reshape(-1)[cut]
+			dic['nutauCC'] = nutaucc.reshape(-1)[cut]
+			dic['NC'] = nc.reshape(-1)[cut]
+		else:
+			dic['nueCC'] = nuecc.reshape(-1)
+			dic['numuCC'] = numucc.reshape(-1)
+			dic['nutauCC'] = nutaucc.reshape(-1)
+			dic['NC'] = nc.reshape(-1)
+
+		return dic
+
+	def SetDetSyst(self):
+		ev = np.zeros(self._num_entries)
+		c = (np.abs(self._mc_neuflavor)==0) * (self._mc_current)
+		ev[c] = 1
+		self.ExpFracNuECC = self.BinWeightedRate3DFlatten(ev * self._BF_rates) / self._BF_rates_weighted_binned
+		ev = np.zeros(self._num_entries)
+		c = (np.abs(self._mc_neuflavor)==1) * (self._mc_current)
+		ev[c] = 1
+		self.ExpFracNuMuCC = self.BinWeightedRate3DFlatten(ev * self._BF_rates) / self._BF_rates_weighted_binned
+		ev = np.zeros(self._num_entries)
+		c = (np.abs(self._mc_neuflavor)==2) * (self._mc_current)
+		ev[c] = 1
+		self.ExpFracNuTauCC = self.BinWeightedRate3DFlatten(ev * self._BF_rates) / self._BF_rates_weighted_binned
+		ev = np.zeros(self._num_entries)
+		c = np.logical_not(self._mc_current)
+		ev[c] = 1
+		self.ExpFracNC = self.BinWeightedRate3DFlatten(ev * self._BF_rates) / self._BF_rates_weighted_binned
+		# Load systematics tables
+		self.ice_absorption = self.ReadDetSystTables('ice_absorption')
+		self.ice_scattering = self.ReadDetSystTables('ice_scattering')
+		self.offset = self.ReadDetSystTables('offset')
+		self.opt_eff_headon = self.ReadDetSystTables('opt_eff_headon')
+		self.opt_eff_lateral = self.ReadDetSystTables('opt_eff_lateral')
+		self.opt_eff_overall = self.ReadDetSystTables('opt_eff_overall')
+		self.coin_fraction = self.ReadDetSystTables('coin_fraction')
