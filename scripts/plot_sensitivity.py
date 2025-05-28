@@ -9,8 +9,19 @@ import glob
 
 parser = argparse.ArgumentParser(description="Plot sensitivity contours from chi2 scan")
 parser.add_argument("--input", "-i",  type=str, required=True, help="CSV file with scan results")
-args = parser.parse_args()
+parser.add_argument("--mode", "-m",  type=str, required=True, help="Whether plotting the standard or sterile case")
 
+args = parser.parse_args()
+if args.mode == "Standard":
+    xkey = "sin2theta23"
+    ykey = "dm31"
+    xlabel = r"$\sin^2\theta_{23}$"
+    ylabel = r"$\Delta m^2_{31}$ [eV$^2$]"
+else:
+    xkey = "sin2theta24"
+    ykey = "dm41"
+    xlabel = r"$\sin^2\theta_{24}$"
+    ylabel = r"$\Delta m^2_{41}$ [eV$^2$]"
 # --- Load scan results and combine into one dataframe---
 files = glob.glob(f"../results/{args.input}/point_*.csv")
 df = pd.concat([pd.read_csv(f) for f in files])
@@ -19,12 +30,14 @@ min_chi2 = df['chi2'].min()
 df['delta_chi2'] = df['chi2'] - min_chi2
 
 # --- Grid for 2D contour ---
-sin2_t23 = np.sort(df['sin2theta23'].unique())
-dm31_vals = np.sort(df['dm31'].unique())
+df[xkey] = np.log10(df[xkey])
+df[ykey] = np.log10(df[ykey])
+sin2_t23 = np.sort((df[xkey]).unique())
+dm31_vals = np.sort((df[ykey]).unique())
 X, Y = np.meshgrid(sin2_t23, dm31_vals)
-chi2_grid = griddata((df['sin2theta23'], df['dm31']), df['delta_chi2'], (X, Y), method='linear')
+chi2_grid = griddata((df[xkey], df[ykey]), df['delta_chi2'], (X, Y), method='linear')
 if np.any(np.isnan(chi2_grid)):
-    chi2_grid = griddata((df['sin2theta23'], df['dm31']), df['delta_chi2'], (X, Y), method='nearest')
+    chi2_grid = griddata((df[xkey], df[ykey]), df['delta_chi2'], (X, Y), method='nearest')
 
 # --- Confidence levels ---
 cl2_68    = chi2.ppf(0.68, df=2)
@@ -48,8 +61,15 @@ ax_top   = divider.append_axes("top",    size="25%", pad=0.1, sharex=ax)
 ax_right = divider.append_axes("right",  size="25%", pad=0.1, sharey=ax)
 
 # --- Main 2D filled contour + lines ---
-levels = np.linspace(np.nanmin(chi2_grid), np.nanmax(chi2_grid), 30)
-cf = ax.contourf(sin2_t23, dm31_vals, chi2_grid, levels=levels, cmap='Blues')
+# levels = np.linspace(np.nanmin(chi2_grid), np.nanmax(chi2_grid), 30)
+lo = np.nanmin(chi2_grid)
+hi = np.nanmax(chi2_grid)
+levels = np.linspace(lo, hi, 30)
+levels = np.sort(levels)      # enforce monotonic increase
+cf = ax.contourf(sin2_t23, dm31_vals, chi2_grid,
+                 levels=levels,
+                 cmap='Blues')
+# cf = ax.contourf(sin2_t23, dm31_vals, chi2_grid, levels=levels, cmap='Blues')
 cbar = fig.colorbar(cf, ax=ax)
 cbar.set_label(r"$\Delta\chi^2$")
 
@@ -59,8 +79,8 @@ CS = ax.contour(sin2_t23, dm31_vals, chi2_grid,
 fmt = {cl2_90:"90% CL", cl2_68:"68% CL"}
 ax.clabel(CS, inline=True, fontsize=10, fmt=fmt)
 
-ax.set_xlabel(r"$\sin^2\theta_{23}$")
-ax.set_ylabel(r"$\Delta m^2_{31}$ [eV$^2$]")
+ax.set_xlabel(xlabel)
+ax.set_ylabel(ylabel)
 
 # --- Top marginal: Δχ² vs sin2θ23 ---
 ax_top.plot(sin2_t23, profile_s23, lw=1.5)

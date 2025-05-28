@@ -207,6 +207,16 @@ class Simulation:
 		self._BF_rates_weighted_binned = self.BinWeightedRate3DFlatten(self._BF_rates) # no E shift needed
 		self._cut_bins = self._BF_rates_weighted_binned > 4 # cut all bins with fewer than 4 events
 		self._BF_rates_weighted_binned = self._BF_rates_weighted_binned[self._cut_bins]
+	
+	# computes the best fit 
+	def ComputeBFRatesSterile(self, t12, t13, t23, t14, t24, t34, dm21, dm31, dm41, dcp, dcp24, Ordering='normal'):
+		if self._BF_rates is not None:
+			print("Best fit unweighted rates is being set multiple times")
+			exit(1)
+		self._BF_rates = self.GetOscillatedSterileRate(3, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, dcp24, Ordering=Ordering)
+		self._BF_rates_weighted_binned = self.BinWeightedRate3DFlatten(self._BF_rates) # no E shift needed
+		self._cut_bins = self._BF_rates_weighted_binned > 4 # cut all bins with fewer than 4 events
+		self._BF_rates_weighted_binned = self._BF_rates_weighted_binned[self._cut_bins]
 
 	# method to deal with IC systematics
 	def ReadDetSystTables(self, syst):

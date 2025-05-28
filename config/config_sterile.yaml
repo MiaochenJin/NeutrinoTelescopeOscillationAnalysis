@@ -1,12 +1,17 @@
-Oscillation : "Standard"
+Oscillation : "Sterile"
 
 BestFit: {
   s2t12: 0.303,
   s2t13: 0.022,
-  s2t23: 0.572, 
+  s2t23: 0.572,
+  s2t14: 0,
+  s2t24: 0,
+  s2t34: 0, 
   m21: 7.41e-5, 
   m31: 2.511e-3, 
-  dCP: 1.36
+  m41: 0,
+  dCP: 1.36,
+  dCP24: 0
 }
 
 FluxSyst : {

@@ -15,7 +15,7 @@ class Analysis:
         syst_settings.update(full_config.get('FluxSyst', {}))
         syst_settings.update(full_config.get('DetSyst', {}))
         syst_settings.update(full_config.get('XsecSyst', {}))
-		
+        
         FLUX_SYST = [
             FluxNormalization_Below1GeV, FluxNormalization_Above1GeV,
             FluxTilt, NuNubarRatio, FlavorRatio,
@@ -27,10 +27,10 @@ class Analysis:
             CoinFraction
         ]
         XSEC_SYST = [XSecNuTau, NCoverCC, AxialMass, NCHad, 
-		    DIS, CCQE, CCQENuBarNu, CCQEMuE]
+            DIS, CCQE, CCQENuBarNu, CCQEMuE]
 
         all_systs = FLUX_SYST + DET_SYST + XSEC_SYST
-		
+        
         self.syst = [
             cls for cls in all_systs
             if syst_settings.get(cls.name, 1) == 1
@@ -40,13 +40,24 @@ class Analysis:
         self.systNominal = [cls.nominal for cls in self.syst]
         self.systSigma = [cls.sigma for cls in self.syst]
         # set up best fit (model) values
+        mode = full_config["Oscillation"]
         self.bf = full_config["BestFit"]
         # set up the simulation
         self.sim.SetInitialFlux()
-        self.sim.ComputeBFRates(np.arcsin(np.sqrt(self.bf['s2t12'])),\
-                                np.arcsin(np.sqrt(self.bf['s2t13'])),\
-                                np.arcsin(np.sqrt(self.bf['s2t23'])),\
-                                self.bf['m21'], self.bf['m31'], \
-                                self.bf['dCP'] * np.pi)
+        if mode == "Standard":
+            self.sim.ComputeBFRates(np.arcsin(np.sqrt(self.bf['s2t12'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t13'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t23'])),\
+                                    self.bf['m21'], self.bf['m31'], \
+                                    self.bf['dCP'] * np.pi)
+        elif mode == "Sterile":
+            self.sim.ComputeBFRatesSterile(np.arcsin(np.sqrt(self.bf['s2t12'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t13'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t23'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t14'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t24'])),\
+                                    np.arcsin(np.sqrt(self.bf['s2t34'])),\
+                                    self.bf['m21'], self.bf['m31'],self.bf['m41'], \
+                                    self.bf['dCP'] * np.pi, self.bf['dCP24'] * np.pi)
         self.sim.SetDetSyst()
     
