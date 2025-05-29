@@ -9,7 +9,7 @@ import argparse
 from utils import *
 import os
 parser = argparse.ArgumentParser(description="Run a single grid point for sensitivity analysis")
-parser.add_argument("--sin2theta24", nargs=3, type=float, default = (1e-3, 1, 10), metavar=('MIN', 'MAX', 'N'), help="theta_23 range (in radians)")
+parser.add_argument("--sin2theta24", nargs=3, type=float, default = (1e-4, 1e-3, 10), metavar=('MIN', 'MAX', 'N'), help="theta_23 range (in radians)")
 parser.add_argument("--dm41", nargs=3, type=float, default = (1e-5, 1, 10), metavar=('MIN', 'MAX', 'N'), help="delta m^2_31 range (eV^2)")
 parser.add_argument("--point", type=int, default = 50, help="Index of point in the parameter grid to run")
 parser.add_argument("--sin2theta12", nargs=3, type=float, default = None, help="theta_12 range (rad)")
@@ -42,9 +42,9 @@ def parse_grid(arglist, default_val, spacing = 'log'):
 sin2t12_vals = parse_grid(args.sin2theta12, s2t12_bf, 'lin')
 sin2t13_vals = parse_grid(args.sin2theta13, s2t13_bf, 'lin')
 sin2t23_vals = parse_grid(args.sin2theta23, s2t23_bf, 'lin')
-sin2t14_vals = parse_grid(args.sin2theta14, s2t14_bf, 'log')
+sin2t14_vals = parse_grid(args.sin2theta14, s2t14_bf, 'lin')
 sin2t24_vals = parse_grid(args.sin2theta24, s2t24_bf, 'log')
-sin2t34_vals = parse_grid(args.sin2theta34, s2t34_bf, 'log')
+sin2t34_vals = parse_grid(args.sin2theta34, s2t34_bf, 'lin')
 
 dm21_vals = parse_grid(args.dm21, m21_bf, 'lin')
 dm31_vals = parse_grid(args.dm31, m31_bf, 'lin')
@@ -79,11 +79,12 @@ t23 = np.arcsin(np.sqrt(sin2t23))
 t14 = np.arcsin(np.sqrt(sin2t14))
 t24 = np.arcsin(np.sqrt(sin2t24))
 t34 = np.arcsin(np.sqrt(sin2t34))
-dat_weights = Analysis.sim.GetOscillatedSterileRate(3, t12, t13, t23, t14, t24, t34, dm21, dm31, dm41, dcp, dcp24)
+dat_weights = Analysis.sim.GetOscillatedSterileRate(t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, dcp24)
 N_dat = Analysis.sim.BinWeightedRate3DFlatten(dat_weights)
 N_mod = Analysis.sim._BF_rates_weighted_binned
 statOnly = ChiSq_only_no_prior(Analysis, nominal_syst, N_dat) # stat only systematics for error tolerance
-
+# print("stats only chisq is ", statOnly)
+# exit(0)
 def obj(syst):
     return ChiSq_Jac_with_penalty(Analysis, syst, N_dat)
 Analysis.SystPrior, bounds = syst_penalty_prior(Analysis, nominal_syst, N_dat) # setup analytic prior

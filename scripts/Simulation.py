@@ -11,10 +11,13 @@ from itertools import repeat
 from utils import *
 from scipy.interpolate import griddata
 class Simulation:
-	def __init__(self, experiment = 'ORCA', livetime = 1.39, filename = '../datafiles/ORCA/ORCA_MC.parquet'):
+	def __init__(self, experiment = 'ORCA', livetime = 1.39, filename = '../datafiles/ORCA/ORCA_MC.parquet', mode = 'steriles'):
 		# some global variables
 		self._experiment = experiment
 		self._filename = filename
+		if mode == "steriles":
+			self.flavors = 4
+		else: self.flavors = 3
 		if experiment == 'ORCA':
 			mc = pd.read_parquet(filename)
 			mu_mc = mc[(mc["MC_type"] == -1)]
@@ -80,8 +83,8 @@ class Simulation:
 	def SetInitialFlux(self):
 		self._flux_energy_nodes = nsq.logspace(self._flux_emin, self._flux_emax, self._flux_enodes)
 		self._flux_cth_nodes = nsq.linspace(self._flux_cthmin, self._flux_cthmax, self._flux_cnodes)
-		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
-		AtmInitialFlux = np.zeros((len(self._flux_cth_nodes),len(self._flux_energy_nodes),2,neutrino_flavors))
+		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self.flavors,nsq.NeutrinoType.both,interactions)
+		AtmInitialFlux = np.zeros((len(self._flux_cth_nodes),len(self._flux_energy_nodes),2,self.flavors))
 		for ic,cth in enumerate(nsq_atm.GetCosthRange()):
 			for ie,E in enumerate(nsq_atm.GetERange()):
 				nu_energy = E/units.GeV
@@ -95,7 +98,7 @@ class Simulation:
 
 	# obtain the mc event unweighted rate for all events given oscillation parameters (phi * prob)
 	def GetOscillatedRate(self, t12, t13, t23, dm21, dm31, dcp, Ordering='normal'):
-		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
+		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self.flavors,nsq.NeutrinoType.both,interactions)
 		nsq_atm.Set_rel_error(1.0e-4)
 		nsq_atm.Set_abs_error(1.0e-4)
 		nsq_atm.Set_MixingAngle(0, 1, t12)
@@ -115,8 +118,8 @@ class Simulation:
 		return rate
 
 	# obtain the mc event unweighted rate for all events given oscillation sterile parameters (phi * prob)
-	def GetOscillatedSterileRate(self, neutrino_flavors, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
-		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,neutrino_flavors,nsq.NeutrinoType.both,interactions)
+	def GetOscillatedSterileRate(self, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
+		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self.flavors,nsq.NeutrinoType.both,interactions)
 		nsq_atm.Set_rel_error(1.0e-4)
 		nsq_atm.Set_abs_error(1.0e-4)
 		nsq_atm.Set_MixingAngle(0, 1, asin(sqrt(t12)))
@@ -135,9 +138,10 @@ class Simulation:
 		nsq_atm.Set_initial_state(self._atm_initial_flux,nsq.Basis.flavor)
 		nsq_atm.EvolveState()
 		rate = np.zeros_like(self._mc_weights)
-		for i in range(len(rate)):
-			rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
-		# rate = list(map(nsq_atm.EvalFlavor, self._mc_neuflavor, self._mc_cthtrue, self._mc_etrue*units.GeV, self._mc_nutype, repeat(True)))
+		# for i in range(len(rate)):
+		# 	rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
+		rate = list(map(nsq_atm.EvalFlavor, (self._mc_neuflavor.astype(int).tolist()), (self._mc_cthtrue.astype(float).tolist()), (self._mc_etrue*self._unit).astype(float).tolist(), (self._mc_nutype.astype(int).tolist()), repeat(True)))
+		
 		return rate
 		
 	# given the unweighted rates, multiply by weights and bin them 
@@ -213,7 +217,7 @@ class Simulation:
 		if self._BF_rates is not None:
 			print("Best fit unweighted rates is being set multiple times")
 			exit(1)
-		self._BF_rates = self.GetOscillatedSterileRate(3, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, dcp24, Ordering=Ordering)
+		self._BF_rates = self.GetOscillatedSterileRate(t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, dcp24, Ordering=Ordering)
 		self._BF_rates_weighted_binned = self.BinWeightedRate3DFlatten(self._BF_rates) # no E shift needed
 		self._cut_bins = self._BF_rates_weighted_binned > 4 # cut all bins with fewer than 4 events
 		self._BF_rates_weighted_binned = self._BF_rates_weighted_binned[self._cut_bins]

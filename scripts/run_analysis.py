@@ -49,7 +49,7 @@ except IndexError:
 # set up analysis object
 MCfile = args.infile
 livetime = args.livetime * 365 * 24 * 60 * 60
-Analysis = Analysis(experiment = "IC", livetime = livetime, filename = MCfile, config = args.config)
+Analysis = Analysis(experiment = "IC", livetime = livetime, filename = MCfile, config = args.config, mode = 'standard')
 nominal_syst = np.array(Analysis.systNominal)
 
 # Run this grid point

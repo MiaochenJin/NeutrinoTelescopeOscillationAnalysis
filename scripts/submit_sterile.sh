@@ -4,11 +4,11 @@
 #SBATCH --mem 2048 
 #SBATCH -t 0-1:00
 #SBATCH --output=logs/job_%A_%a.out
-#SBATCH --array=0-99
+#SBATCH --array=0-399
 
 ss
 python run_analysis_sterile.py \
-    --sin2theta24 1e-3 1 10 \
-    --dm41 1e-5 1 10 \
+    --sin2theta24 1e-3 3e-2 20 \
+    --dm41 1e-4 1e-1 20  \
     --point ${SLURM_ARRAY_TASK_ID} \
-    --outfile 0528_sterile/point_${SLURM_ARRAY_TASK_ID}.csv 
+    --outfile 0529_sterile/point_${SLURM_ARRAY_TASK_ID}.csv 
