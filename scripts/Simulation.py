@@ -11,11 +11,11 @@ from itertools import repeat
 from utils import *
 from scipy.interpolate import griddata
 class Simulation:
-	def __init__(self, experiment = 'ORCA', livetime = 1.39, filename = '../datafiles/ORCA/ORCA_MC.parquet', mode = 'steriles'):
+	def __init__(self, experiment = 'ORCA', livetime = 1.39, filename = '../datafiles/ORCA/ORCA_MC.parquet', mode = 'Sterile'):
 		# some global variables
 		self._experiment = experiment
 		self._filename = filename
-		if mode == "steriles":
+		if mode == "Sterile":
 			self.flavors = 4
 		else: self.flavors = 3
 		if experiment == 'ORCA':
@@ -122,12 +122,12 @@ class Simulation:
 		nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self.flavors,nsq.NeutrinoType.both,interactions)
 		nsq_atm.Set_rel_error(1.0e-4)
 		nsq_atm.Set_abs_error(1.0e-4)
-		nsq_atm.Set_MixingAngle(0, 1, asin(sqrt(t12)))
-		nsq_atm.Set_MixingAngle(0, 2, asin(sqrt(t13)))
-		nsq_atm.Set_MixingAngle(1, 2, asin(sqrt(t23)))
-		nsq_atm.Set_MixingAngle(0, 3, asin(sqrt(t14)))
-		nsq_atm.Set_MixingAngle(1, 3, asin(sqrt(t24)))
-		nsq_atm.Set_MixingAngle(2, 3, asin(sqrt(t34)))			
+		nsq_atm.Set_MixingAngle(0, 1, t12)
+		nsq_atm.Set_MixingAngle(0, 2, t13)
+		nsq_atm.Set_MixingAngle(1, 2, t23)
+		nsq_atm.Set_MixingAngle(0, 3, t14)
+		nsq_atm.Set_MixingAngle(1, 3, t24)
+		nsq_atm.Set_MixingAngle(2, 3, t34)			
 		nsq_atm.Set_SquareMassDifference(1, dm21)
 		nsq_atm.Set_SquareMassDifference(2, dm31)
 		nsq_atm.Set_SquareMassDifference(3, dm41)

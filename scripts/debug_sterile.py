@@ -7,21 +7,29 @@ from scipy.optimize import minimize
 livetime = 5 * 365 * 24 * 60 * 60 # assume 10 years
 csv = "/n/holylfs05/LABS/arguelles_delgado_lab/Everyone/miaochenjin/NeutrinoTelescopeOscillationAnalysis/datafiles/IC/neutrino_mc.csv"
 this_IC = '../datafiles/IC/neutrino_mc.csv'
-Analysis = Analysis(experiment = "IC", livetime = livetime, filename = csv)
+Analysis = Analysis(experiment = "IC", livetime = livetime, filename = csv, config = "../config/config_sterile.yaml")
 
 # verify with some set of parameters
 s2t12_bf, s2t13_bf, s2t23_bf, m21_bf, m31_bf, dCP_bf = 0.303, 0.022, 0.572, 7.41e-5, 2.511e-3, 1.36 * np.pi
+s2t14_bf, s2t24_bf, s2t34_bf, m41_bf, dCP24_bf = 0, 0, 0, 0, 0
 t12_bf = np.arcsin(np.sqrt(s2t12_bf))
 t13_bf = np.arcsin(np.sqrt(s2t13_bf))
 t23_bf = np.arcsin(np.sqrt(s2t23_bf))
+t14_bf = np.arcsin(np.sqrt(s2t14_bf))
+t24_bf = np.arcsin(np.sqrt(s2t24_bf))
+t34_bf = np.arcsin(np.sqrt(s2t34_bf))
 
 s2t12, s2t13, s2t23, m21, m31, dCP = 0.303, 0.03, 0.572, 7.41e-5, 2.511e-3, 1.36 * np.pi
+s2t14, s2t24, s2t34, m41, dCP24 = 0, 1e-2, 0, 1e-4, 0
 t12 = np.arcsin(np.sqrt(s2t12))
 t13 = np.arcsin(np.sqrt(s2t13))
 t23 = np.arcsin(np.sqrt(s2t23))
+t14 = np.arcsin(np.sqrt(s2t14))
+t24 = np.arcsin(np.sqrt(s2t24))
+t34 = np.arcsin(np.sqrt(s2t34))
 
 nominal_syst = np.array(Analysis.systNominal)
-obs_weights = Analysis.sim.GetOscillatedRate(t12, t13, t23, m21, m31, dCP)
+obs_weights = Analysis.sim.GetOscillatedSterileRate(t12, t13, t23, m21, m31, dCP, t14, t24, t34, m41, dCP24)
 N_mod = Analysis.sim._BF_rates_weighted_binned
 N_dat = Analysis.sim.BinWeightedRate3DFlatten(obs_weights)
 print(np.sum(N_mod - N_dat))

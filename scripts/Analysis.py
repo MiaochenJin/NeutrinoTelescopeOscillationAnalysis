@@ -9,8 +9,9 @@ class Analysis:
     def __init__(self, experiment, livetime, filename, config = "../config/config.yaml"):
         # read config
         full_config = yaml.safe_load(open(config, 'r'))
+        mode = full_config["Oscillation"]
         # set up experiment
-        self.sim = Simulation(experiment, livetime, filename)
+        self.sim = Simulation(experiment, livetime, filename, mode = mode)
         syst_settings = {}
         syst_settings.update(full_config.get('FluxSyst', {}))
         syst_settings.update(full_config.get('DetSyst', {}))
@@ -40,7 +41,6 @@ class Analysis:
         self.systNominal = [cls.nominal for cls in self.syst]
         self.systSigma = [cls.sigma for cls in self.syst]
         # set up best fit (model) values
-        mode = full_config["Oscillation"]
         self.bf = full_config["BestFit"]
         # set up the simulation
         self.sim.SetInitialFlux()

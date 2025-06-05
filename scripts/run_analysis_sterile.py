@@ -9,8 +9,8 @@ import argparse
 from utils import *
 import os
 parser = argparse.ArgumentParser(description="Run a single grid point for sensitivity analysis")
-parser.add_argument("--sin2theta24", nargs=3, type=float, default = (1e-4, 1e-3, 10), metavar=('MIN', 'MAX', 'N'), help="theta_23 range (in radians)")
-parser.add_argument("--dm41", nargs=3, type=float, default = (1e-5, 1, 10), metavar=('MIN', 'MAX', 'N'), help="delta m^2_31 range (eV^2)")
+parser.add_argument("--sin2theta24", nargs=3, type=float, default = (1e-4, 1e-1, 10),  help="theta_23 range (in radians)")
+parser.add_argument("--dm41", nargs=3, type=float, default =(1e-4, 1e-1, 10), metavar=('MIN', 'MAX', 'N'), help="delta m^2_31 range (eV^2)")
 parser.add_argument("--point", type=int, default = 50, help="Index of point in the parameter grid to run")
 parser.add_argument("--sin2theta12", nargs=3, type=float, default = None, help="theta_12 range (rad)")
 parser.add_argument("--sin2theta13", nargs=3, type=float, default = None, help="theta_13 range (rad)")
@@ -30,29 +30,36 @@ parser.add_argument("--newBF", type=bool, default=False, help="Whether to genera
 
 args = parser.parse_args()
 
-def parse_grid(arglist, default_val, spacing = 'log'):
+def parse_grid(arglist, default_val, spacing = 'log', exist_bf =False ):
     if arglist is None:
         return [default_val]  # No scan → use single value (best-fit)
     if spacing == 'log':
-        return np.logspace(np.log10(arglist[0]), np.log10(arglist[1]), int(arglist[2]))
+        res = np.logspace(np.log10(arglist[0]), np.log10(arglist[1]), int(arglist[2]))
     else:
-        return np.linspace(arglist[0], arglist[1], int(arglist[2]))
+        res = np.linspace(arglist[0], arglist[1], int(arglist[2]))
+    if exist_bf:
+        if default_val in res: return res
+        else: return np.append(res, np.array([default_val]))
+    else:
+        return res
 
 # Build full parameter grid
 sin2t12_vals = parse_grid(args.sin2theta12, s2t12_bf, 'lin')
 sin2t13_vals = parse_grid(args.sin2theta13, s2t13_bf, 'lin')
 sin2t23_vals = parse_grid(args.sin2theta23, s2t23_bf, 'lin')
-sin2t14_vals = parse_grid(args.sin2theta14, s2t14_bf, 'lin')
-sin2t24_vals = parse_grid(args.sin2theta24, s2t24_bf, 'log')
-sin2t34_vals = parse_grid(args.sin2theta34, s2t34_bf, 'lin')
+sin2t14_vals = parse_grid(args.sin2theta14, s2t14_bf, 'log')
+sin2t24_vals = parse_grid(args.sin2theta24, s2t24_bf, 'log', exist_bf = False)
+sin2t34_vals = parse_grid(args.sin2theta34, s2t34_bf, 'log')
 
 dm21_vals = parse_grid(args.dm21, m21_bf, 'lin')
 dm31_vals = parse_grid(args.dm31, m31_bf, 'lin')
-dm41_vals = parse_grid(args.dm41, m41_bf, 'log')
+dm41_vals = parse_grid(args.dm41, m41_bf, 'log', exist_bf = False)
 
 dcp_vals = parse_grid(args.dcp, dCP_bf, 'lin')
 dcp24_vals = parse_grid(args.dcp24, dCP24_bf, 'log')
-
+print((sin2t12_vals, sin2t13_vals, sin2t23_vals, sin2t14_vals,\
+                                    sin2t24_vals, sin2t34_vals, dm21_vals, dm31_vals, dm41_vals,\
+                                    dcp_vals, dcp24_vals))
 param_grid = list(itertools.product(sin2t12_vals, sin2t13_vals, sin2t23_vals, sin2t14_vals,\
                                     sin2t24_vals, sin2t34_vals, dm21_vals, dm31_vals, dm41_vals,\
                                     dcp_vals, dcp24_vals))

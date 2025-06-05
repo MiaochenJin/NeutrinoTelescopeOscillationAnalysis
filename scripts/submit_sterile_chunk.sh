@@ -1,24 +1,33 @@
 #!/bin/bash
 #SBATCH -c 1
-#SBATCH -p arguelles_delgado_gpu
+#SBATCH -p arguelles_delgado
 #SBATCH --mem 2048 
 #SBATCH -t 0-1:00
 #SBATCH --output=logs/job_%A_%a.out
-#SBATCH --array=1002-9999
+#SBATCH --array=0-1500
 
 ss
 
-CHUNK=10
+CHUNK=50
 BASE=$(( SLURM_ARRAY_TASK_ID * CHUNK ))
 
 for (( i=0; i<CHUNK; i++ )); do
     POINT=$(( BASE + i ))
     python run_analysis_sterile.py \
-        --sin2theta24 1e-4 1e-3 10 \
-        --sin2theta14 0 1e-4 10 \
-        --sin2theta23 0.3 0.8 10 \
-        --dm31 1e-3 4e-3 10 \
-        --dm41 1e-5 1 10 \
+        --sin2theta24 1e-3 1 30 \
+        --dm31 2e-3 3e-3 15 \
+        --dm41 1e-5 1 50 \
         --point ${POINT} \
-        --outfile 0529_sterile/point_${POINT}.csv
+        --outfile 0601_s2t23_bf/point_${POINT}.csv
 done
+
+# for (( i=0; i<CHUNK; i++ )); do
+#     POINT=$(( BASE + i ))
+#     python run_analysis_sterile.py \
+#         --sin2theta24 1e-3 1 30 \
+#         --sin2theta23 0.305 0.705 15 \
+#         --dm31 2e-3 3e-3 15 \
+#         --dm41 1e-5 1 50 \
+#         --point ${POINT} \
+#         --outfile 0531_sterile_chunk/point_${POINT}.csv
+# done
