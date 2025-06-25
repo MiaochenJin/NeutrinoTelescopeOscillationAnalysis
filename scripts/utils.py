@@ -5,17 +5,18 @@ from matplotlib import pyplot as plt
 import glob
 import pandas as pd
 import yaml
+import os
 
 units = nsq.Const()
 interactions = False
-flux = nuflux.makeFlux('IPhonda2014_spl_solmin')
+flux = nuflux.makeFlux('IPhonda2014_sk_solmin')
 
 neutrino_flavors = 3
 # some earth parameters to compute L/E
 R_E = 6371 # KM
 
 # Set up mixing parameters
-bfpoint = yaml.safe_load(open("../config/config_sterile.yaml", 'r'))["BestFit"]
+bfpoint = yaml.safe_load(open("../config/config_orca.yaml", 'r'))["BestFit"]
 
 t12_bf = np.arcsin(np.sqrt(bfpoint["s2t12"]))
 t13_bf = np.arcsin(np.sqrt(bfpoint['s2t13']))
@@ -87,6 +88,36 @@ def plot_reco_energy_distribution(binned_events_osci, binned_events_non_osci, re
 
     plt.tight_layout()
     plt.savefig(f"./Asimov_Distribution.png", bbox_inches='tight')
+
+def LoadBinnedData(directory, file_pattern="*.csv"):
+    """
+    Loads and concatenates binned data from CSV files in a given directory
+    that match a specific pattern.
+    Assumes each CSV contains a column with the binned event counts.
+    The column name is inferred if it's 'N_dat', 'count', or 'counts'.
+    """
+    all_files = sorted(glob.glob(os.path.join(directory, file_pattern)))
+    if not all_files:
+        raise FileNotFoundError(f"No files matching '{file_pattern}' found in directory: {directory}")
+    
+    df_list = [pd.read_csv(f) for f in all_files]
+    
+    # Try to find the data column
+    sample_df = df_list[0]
+    data_col = None
+    possible_cols = ['N_dat', 'count', 'counts']
+    for col in possible_cols:
+        if col in sample_df.columns:
+            data_col = col
+            break
+            
+    if data_col is None:
+        raise KeyError(f"Data column (e.g., 'N_dat', 'count') not found in CSV files in {directory}")
+
+    # Concatenate the data column from all files
+    full_data = pd.concat([df[data_col] for df in df_list], ignore_index=True)
+    
+    return full_data.values
 
 if __name__ == "__main__":
     files = glob.glob("results/point_*.csv")

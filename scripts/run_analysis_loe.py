@@ -17,7 +17,7 @@ parser.add_argument("--sin2theta13", nargs=3, type=float, default = None, help="
 parser.add_argument("--dm21", nargs=3, type=float, default = None, help="delta m^2_21 range")
 parser.add_argument("--dcp", nargs=3, type=float, default = None, help="delta CP range (rad)")
 parser.add_argument("--livetime", type=float, default = 5, help="livetime")
-parser.add_argument("--config", type=str, default = '../config/config.yaml', help="config file")
+parser.add_argument("--config", type=str, default = '../config/config_orca.yaml', help="config file")
 parser.add_argument("--tol", type=float, default = 1e-5, help="tolerance when minimizing")
 parser.add_argument("--infile", type=str, default = '../datafiles/IC/neutrino_mc.csv', help="input csv")
 parser.add_argument("--outfile", type=str, default="foo_point.csv", help="Output CSV filename for this point")
@@ -40,7 +40,7 @@ dcp_vals = parse_grid(args.dcp, dCP_bf)
 
 param_grid = list(itertools.product(sin2t12_vals, sin2t13_vals, sin2t23_vals, dm21_vals, dm31_vals, dcp_vals))
 
-# Extract this job’s grid point
+# Extract this job's grid point
 try:
     sin2t12, sin2t13, sin2t23, dm21, dm31, dcp = param_grid[args.point]
 except IndexError:
@@ -48,7 +48,6 @@ except IndexError:
 
 # set up analysis object
 MCfile = args.infile
-livetime = args.livetime * 365 * 24 * 60 * 60
 orca = '../datafiles/ORCA/ORCA_MC.parquet'
 config = "../config/config_orca.yaml"
 Analysis = Analysis(experiment = "ORCA", livetime = 1.39, filename = orca, config = config)
@@ -59,12 +58,42 @@ print(f"[INFO] Running Experiment {Analysis.sim._experiment}")
 print(f"[INFO] Using set of systematics {Analysis.systNames}")
 print(f"[INFO] Running grid point #{args.point}: sin2theta23={sin2t23:.5f}, dm31={dm31:.6e}")
 
-N_dat = Analysis.Compute_N_dat(sin2t12 = sin2t12, sin2t13 = sin2t13, sin2t23 = sin2t23, 
-                                dm21 = dm21, dm31 = dm31, dcp = dcp)
-
-res = Analysis.FitSystematics(nominal_syst = nominal_syst, N_dat = N_dat, tol = args.tol, 
-                        stat_chisq_fn = ChiSq_only_no_prior, 
-                        full_chisq_fn = ChiSq_Jac_with_penalty)
+if Analysis.do_data_fitting:
+    print("[INFO] Data fitting mode")
+    # Data fitting mode: N_dat is fixed, N_mod varies with grid point
+    N_dat = Analysis.N_dat_fixed
+    
+    # Get unbinned rates for the current hypothesis
+    t12 = np.arcsin(np.sqrt(sin2t12))
+    t13 = np.arcsin(np.sqrt(sin2t13))
+    t23 = np.arcsin(np.sqrt(sin2t23))
+    mod_weights_unbinned = Analysis.sim.GetOscillatedRate(t12, t13, t23, dm21, dm31, dcp)
+    
+    # Bin the rates to get the N_mod for the chi-squared calculation.
+    # Note: We are not using the binned error in this configuration.
+    N_mod, N_mod_err = Analysis.sim.BinHypothesis(mod_weights_unbinned)
+    
+    # Attach the unbinned rates to the sim object for the systematics calculation
+    Analysis.sim._hypothesis_rates = mod_weights_unbinned
+    
+    # Package the hypothesis-specific arguments for the chi-squared function
+    chisq_kwargs = {'N_mod_hypo': N_mod, 'N_mod_hypo_err': N_mod_err}
+    
+    res = Analysis.FitSystematics(nominal_syst=nominal_syst, N_dat=N_dat, tol=args.tol,
+                                  stat_chisq_fn=ChiSq_only_no_prior,
+                                  full_chisq_fn=ChiSq_with_penalty_with_error,
+                                  chisq_kwargs=chisq_kwargs)
+                                  
+    # Clean up the temporary attribute
+    del Analysis.sim._hypothesis_rates
+else:
+    print("[INFO] Sensitivity mode")
+    # Sensitivity mode: N_mod is fixed (best-fit), N_dat varies with grid point
+    N_dat = Analysis.Compute_N_dat(sin2t12=sin2t12, sin2t13=sin2t13, sin2t23=sin2t23,
+                                   dm21=dm21, dm31=dm31, dcp=dcp)
+    res = Analysis.FitSystematics(nominal_syst=nominal_syst, N_dat=N_dat, tol=args.tol,
+                                  stat_chisq_fn=ChiSq_only_no_prior,
+                                  full_chisq_fn=ChiSq_with_penalty_with_error)
 
 best_syst = res.x
 chi2 = res.fun

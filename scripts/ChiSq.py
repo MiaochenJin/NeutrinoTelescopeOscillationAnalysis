@@ -4,29 +4,33 @@ from scipy.special import gamma
 from Systematics import *
 
 # compute chi squared without penalty or jacobian or analytic prior for jacobian 
-def ChiSq_only_no_prior(analysis, syst, N_dat):
+def ChiSq_only_no_prior(analysis, syst, N_dat, N_mod_hypo=None):
 	sim = analysis.sim
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
-	N_mod = sim._BF_rates_weighted_binned
+	if N_mod_hypo is None:
+		N_mod = analysis.sim.ReturnBFBinned()
+	else:
+		N_mod = N_mod_hypo
 	assert(N_dat.shape == N_mod.shape)
 	syst_shift = 0
-
 	for i, sname in enumerate(syst_ls):
 		apply_fn, diff_fn = syst_reg[sname]
 		syst_shift += apply_fn(syst[i], sim)
 	N_mod_syst = N_mod * (1 + syst_shift)
-
 	X2 = 2 * (N_mod_syst - N_dat + N_dat * np.log(N_dat / N_mod_syst))
 	return np.sum(X2)
 
 # this chi squared returns X2 and jacobian without priors
-def ChiSq_Jac_no_prior(analysis, syst, N_dat):
+def ChiSq_Jac_no_prior(analysis, syst, N_dat, N_mod_hypo=None):
 	JX2 = [0] * len(syst)
 	sim = analysis.sim
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
-	N_mod = sim._BF_rates_weighted_binned
+	if N_mod_hypo is None:
+		N_mod = analysis.sim.ReturnBFBinned()
+	else:
+		N_mod = N_mod_hypo
 	assert(N_dat.shape == N_mod.shape)
 	syst_shift = 0
 	dNdx = [0] * len(syst)
@@ -45,12 +49,15 @@ def ChiSq_Jac_no_prior(analysis, syst, N_dat):
 	return X2, np.array(JX2)
 
 # this chi squared returns X2 and jacobian without priors
-def ChiSq_Jac_with_penalty(analysis, syst, N_dat):
+def ChiSq_Jac_with_penalty(analysis, syst, N_dat, N_mod_hypo=None):
 	JX2 = [0] * len(syst)
 	sim = analysis.sim
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
-	N_mod = sim._BF_rates_weighted_binned
+	if N_mod_hypo is None:
+		N_mod = analysis.sim.ReturnBFBinned()
+	else:
+		N_mod = N_mod_hypo
 	assert(N_dat.shape == N_mod.shape)
 	syst_shift = 0
 	dNdx = [0] * len(syst)
@@ -70,15 +77,61 @@ def ChiSq_Jac_with_penalty(analysis, syst, N_dat):
 
 	return X2, np.array(JX2)
 
+# this method does not yet have jacobian implemented
+def ChiSq_with_penalty_with_error(analysis, syst, N_dat, N_mod_hypo=None, N_mod_hypo_err=None):
+	sim = analysis.sim
+	# prepare systematics
+	syst_ls = analysis.systNames
+	syst_reg = analysis.systRegistry
+	# prepare different things that go into the ChiSq calculation
+	if N_mod_hypo is None:
+		N_mod = analysis.sim.ReturnBFBinned()
+	else:
+		N_mod = N_mod_hypo
+
+	if N_mod_hypo_err is None:
+		err_mod = sim.ReturnBFErrorBinned()
+	else:
+		err_mod = N_mod_hypo_err
+	# make sure shapes are correct
+	assert(N_dat.shape == N_mod.shape)
+	assert(N_mod.shape == err_mod.shape)
+	# start calculation of systematics effect
+	syst_shift = 0
+	for i, sname in enumerate(syst_ls):
+		apply_fn, diff_fn = syst_reg[sname]
+		syst_shift += apply_fn(syst[i], sim)
+	# compute N_mod(theta, syst)
+	N_mod_syst = N_mod * (1 + syst_shift)
+	# compute BB error based on N_mod_syst
+	def compute_beta():
+		beta = np.zeros_like(err_mod)
+		model_uncert = 1 - N_mod_syst * err_mod
+		beta = .5 * (model_uncert + np.sqrt(model_uncert ** 2 + 4 * N_dat * err_mod))
+		return beta
+	beta = compute_beta()
+	BB_error = np.sum(np.nan_to_num((beta - 1) ** 2 / err_mod, nan = 0))
+	beta_N_mod = beta * N_mod_syst
+	# sum up to get X2 with analytically minimized beta
+	X2 = np.sum(2 * (beta_N_mod - N_dat + N_dat * np.log(N_dat / beta_N_mod)))
+	X2 += BB_error
+	# apply BB penalty and syst penalty
+	for i,(x,mu,sig) in enumerate(zip(syst,analysis.systNominal,analysis.systSigma)):
+		X2 += ((x-mu) / sig)**2
+	return X2
+
 # compute the penalty and jacobian due to analytic prior bounds
-def syst_penalty_prior(analysis, syst, N_dat):
+def syst_penalty_prior(analysis, syst, N_dat, N_mod_hypo=None):
 	sim = analysis.sim
 	n_syst = len(syst)
 	lin_terms = np.zeros(n_syst)
 	quad_terms = np.zeros(n_syst)
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
-	N_mod = sim._BF_rates_weighted_binned
+	if N_mod_hypo is None:
+		N_mod = analysis.sim.ReturnBFBinned()
+	else:
+		N_mod = N_mod_hypo
 	N_diff = N_dat - N_mod
 	for i, sname in enumerate(syst_ls):
 		apply_fn, diff_fn = syst_reg[sname]
