@@ -11,10 +11,12 @@ def ChiSq_only_no_prior(analysis, syst, N_dat):
 	N_mod = sim._BF_rates_weighted_binned
 	assert(N_dat.shape == N_mod.shape)
 	syst_shift = 0
-
+	print(N_mod.shape)
 	for i, sname in enumerate(syst_ls):
 		apply_fn, diff_fn = syst_reg[sname]
 		syst_shift += apply_fn(syst[i], sim)
+		# print(sname)
+		print(syst_shift.shape)
 	N_mod_syst = N_mod * (1 + syst_shift)
 
 	X2 = 2 * (N_mod_syst - N_dat + N_dat * np.log(N_dat / N_mod_syst))

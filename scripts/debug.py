@@ -7,7 +7,8 @@ from scipy.optimize import minimize
 livetime = 5 * 365 * 24 * 60 * 60 # assume 10 years
 csv = "/n/holylfs05/LABS/arguelles_delgado_lab/Everyone/miaochenjin/NeutrinoTelescopeOscillationAnalysis/datafiles/IC/neutrino_mc.csv"
 this_IC = '../datafiles/IC/neutrino_mc.csv'
-Analysis = Analysis(experiment = "IC", livetime = livetime, filename = csv)
+ORCA = '../datafiles/ORCA/ORCA_MC.parquet'
+Analysis = Analysis(experiment = "IC", livetime = livetime, filename = this_IC)
 
 # verify with some set of parameters
 s2t12_bf, s2t13_bf, s2t23_bf, m21_bf, m31_bf, dCP_bf = 0.303, 0.022, 0.572, 7.41e-5, 2.511e-3, 1.36 * np.pi
@@ -21,17 +22,21 @@ t13 = np.arcsin(np.sqrt(s2t13))
 t23 = np.arcsin(np.sqrt(s2t23))
 
 nominal_syst = np.array(Analysis.systNominal)
-obs_weights = Analysis.sim.GetOscillatedRate(t12, t13, t23, m21, m31, dCP)
+obs_weights = Analysis.sim.GetOscillatedRate(t12, t23_bf, t23, m21, m31, dCP)
 N_mod = Analysis.sim._BF_rates_weighted_binned
 N_dat = Analysis.sim.BinWeightedRate3DFlatten(obs_weights)
 print(np.sum(N_mod - N_dat))
 
-# now compare the rates
-old = np.load("../datafiles/OldCode/N_mod_sterile.npz")
-old_N_mod = old["N_mod"]
-old_N_dat = old["N_dat"]
-print("difference between N dat is ", np.sum(N_dat - old_N_dat))
-print("difference between N mod is ", np.sum(N_mod - old_N_mod))
+# # now compare the rates
+# old = np.load("../datafiles/OldCode/N_mod_sterile.npz")
+# old_N_mod = old["N_mod"]
+# old_N_dat = old["N_dat"]
+# print("difference between N dat is ", np.sum(N_dat - old_N_dat))
+# print("difference between N mod is ", np.sum(N_mod - old_N_mod))
+
+simple = ChiSq_only_no_prior(Analysis, nominal_syst, N_dat)
+print("simple chisq is ", simple)
+exit(0)
 
 X2, JX2 = ChiSq_Jac_with_penalty(Analysis, nominal_syst, N_dat)
 statOnly = ChiSq_only_no_prior(Analysis, nominal_syst, N_dat)
