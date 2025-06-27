@@ -20,9 +20,21 @@ def main():
     analysis = Analysis(
         experiment='ORCA',
         livetime=1.39,  # ORCA livetime
-        filename='../datafiles/ORCA/ORCA_MC.parquet',
+        # filename='../datafiles/ORCA/ORCA_MC.parquet',
+        filename='../datafiles/ORCA/ORCA_MC_dataverse.parquet',
         config=config_path
     )
+    
+    # # Manually compute best-fit rates, as this is not done in data-fitting mode
+    # bf = analysis.bf
+    # analysis.sim.ComputeBFRates(
+    #     np.arcsin(np.sqrt(bf['s2t12'])),
+    #     np.arcsin(np.sqrt(bf['s2t13'])),
+    #     np.arcsin(np.sqrt(bf['s2t23'])),
+    #     bf['m21'],
+    #     bf['m31'],
+    #     bf['dCP'] * np.pi
+    # )
     
     # Temporarily clear the cut_bins to get full uncut data for plotting
     original_cut_bins = analysis.sim._cut_bins.copy() if hasattr(analysis.sim, '_cut_bins') else []
@@ -100,7 +112,7 @@ def main():
     
     plt.tight_layout()
     # plt.show()
-    plt.savefig('../results/plots/loe_ratio_histograms.png', dpi=300, bbox_inches='tight')
+    plt.savefig('../results/plots/loe_ratio_histograms_dataverse.png', dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
     main() 

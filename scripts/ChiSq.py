@@ -9,7 +9,7 @@ def ChiSq_only_no_prior(analysis, syst, N_dat, N_mod_hypo=None):
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
 	if N_mod_hypo is None:
-		N_mod = analysis.sim.ReturnBFBinned()
+	N_mod = analysis.sim.ReturnBFBinned()
 	else:
 		N_mod = N_mod_hypo
 	assert(N_dat.shape == N_mod.shape)
@@ -55,7 +55,7 @@ def ChiSq_Jac_with_penalty(analysis, syst, N_dat, N_mod_hypo=None):
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
 	if N_mod_hypo is None:
-		N_mod = analysis.sim.ReturnBFBinned()
+	N_mod = analysis.sim.ReturnBFBinned()
 	else:
 		N_mod = N_mod_hypo
 	assert(N_dat.shape == N_mod.shape)
@@ -85,12 +85,12 @@ def ChiSq_with_penalty_with_error(analysis, syst, N_dat, N_mod_hypo=None, N_mod_
 	syst_reg = analysis.systRegistry
 	# prepare different things that go into the ChiSq calculation
 	if N_mod_hypo is None:
-		N_mod = analysis.sim.ReturnBFBinned()
+	N_mod = analysis.sim.ReturnBFBinned()
 	else:
 		N_mod = N_mod_hypo
 
 	if N_mod_hypo_err is None:
-		err_mod = sim.ReturnBFErrorBinned()
+	err_mod = sim.ReturnBFErrorBinned()
 	else:
 		err_mod = N_mod_hypo_err
 	# make sure shapes are correct
@@ -121,7 +121,7 @@ def ChiSq_with_penalty_with_error(analysis, syst, N_dat, N_mod_hypo=None, N_mod_
 	return X2
 
 # compute the penalty and jacobian due to analytic prior bounds
-def syst_penalty_prior(analysis, syst, N_dat, N_mod_hypo=None):
+def syst_penalty_prior(analysis, syst, N_dat, N_mod_hypo=None, N_mod_hypo_err=None):
 	sim = analysis.sim
 	n_syst = len(syst)
 	lin_terms = np.zeros(n_syst)
@@ -129,21 +129,39 @@ def syst_penalty_prior(analysis, syst, N_dat, N_mod_hypo=None):
 	syst_ls = analysis.systNames
 	syst_reg = analysis.systRegistry
 	if N_mod_hypo is None:
-		N_mod = analysis.sim.ReturnBFBinned()
+	N_mod = analysis.sim.ReturnBFBinned()
 	else:
 		N_mod = N_mod_hypo
-	N_diff = N_dat - N_mod
+	
+	# The Hessian (quad_terms) depends on the variance of the bin contents
+	if N_mod_hypo_err is None:
+		# Original case: variance is just data statistics, approximated by N_dat
+		variance = N_dat
+	else:
+		# With MC error: variance is sum of data and model variance
+		variance = N_dat + N_mod_hypo_err
+	
+	# Avoid division by zero for bins with zero variance
+	safe_variance = np.where(variance > 0, variance, 1)
+
 	for i, sname in enumerate(syst_ls):
 		apply_fn, diff_fn = syst_reg[sname]
 		# compute derivative at nominal pull
 		mu_i = analysis.systNominal[i]
-		dFdx = diff_fn(mu_i, sim)
-		lin_terms[i] += np.sum(N_diff * dFdx)
-		quad_terms[i] += np.sum(N_dat * dFdx ** 2)
+		dFdx = diff_fn(mu_i, sim) # This is df/ds
+		
+		# Gradient term: d(Chi2)/ds
+		lin_terms[i] += np.sum((N_mod - N_dat) * dFdx)
+
+		# Hessian term: d^2(Chi2)/ds^2, which is sum_bins[ (dL/ds)^2 / variance ]
+		dLds = N_mod * dFdx
+		quad_terms[i] += np.sum(dLds**2 / safe_variance)
+
 	priors = []
 	bounds = []
 	for i, (mu_i, sigma_i) in enumerate(zip(analysis.systNominal, analysis.systSigma)):
-		pr = mu_i + lin_terms[i] / (quad_terms[i] + 1.0/sigma_i**2)
+		# prior = mu - gradient / (Hessian + prior_variance)
+		pr = mu_i - lin_terms[i] / (quad_terms[i] + 1.0/sigma_i**2)
 		delta = min(abs(pr - mu_i), sigma_i)
 		center = 0.5 * (mu_i + pr)
 		priors.append(center)

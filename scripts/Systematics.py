@@ -406,5 +406,3 @@ class CoinFraction(Systematics):
         sim.ExpFracNuTauCC * sim.coin_fraction['nutauCC'] + \
         sim.ExpFracNC * sim.coin_fraction['NC']
         return d
-
-

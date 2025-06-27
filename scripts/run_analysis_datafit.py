@@ -17,7 +17,7 @@ parser.add_argument("--sin2theta13", nargs=3, type=float, default = None, help="
 parser.add_argument("--dm21", nargs=3, type=float, default = None, help="delta m^2_21 range")
 parser.add_argument("--dcp", nargs=3, type=float, default = None, help="delta CP range (rad)")
 parser.add_argument("--livetime", type=float, default = 5, help="livetime")
-parser.add_argument("--config", type=str, default = '../config/config_orca.yaml', help="config file")
+parser.add_argument("--config", type=str, default = '../config/config_orca_datafit.yaml', help="config file")
 parser.add_argument("--tol", type=float, default = 1e-5, help="tolerance when minimizing")
 parser.add_argument("--infile", type=str, default = '../datafiles/IC/neutrino_mc.csv', help="input csv")
 parser.add_argument("--outfile", type=str, default="foo_point.csv", help="Output CSV filename for this point")
@@ -48,8 +48,8 @@ except IndexError:
 
 # set up analysis object
 MCfile = args.infile
-orca = '../datafiles/ORCA/ORCA_MC.parquet'
-config = "../config/config_orca.yaml"
+orca = '../datafiles/ORCA/ORCA_MC_dataverse.parquet'
+config = "../config/config_orca_datafit.yaml"
 Analysis = Analysis(experiment = "ORCA", livetime = 1.39, filename = orca, config = config)
 nominal_syst = np.array(Analysis.systNominal)
 
@@ -80,8 +80,6 @@ if Analysis.do_data_fitting:
     chisq_kwargs = {'N_mod_hypo': N_mod, 'N_mod_hypo_err': N_mod_err}
     
     res = Analysis.FitSystematics(nominal_syst=nominal_syst, N_dat=N_dat, tol=args.tol,
-                                  stat_chisq_fn=ChiSq_only_no_prior,
-                                  full_chisq_fn=ChiSq_with_penalty_with_error,
                                   chisq_kwargs=chisq_kwargs)
                                   
     # Clean up the temporary attribute
@@ -91,9 +89,7 @@ else:
     # Sensitivity mode: N_mod is fixed (best-fit), N_dat varies with grid point
     N_dat = Analysis.Compute_N_dat(sin2t12=sin2t12, sin2t13=sin2t13, sin2t23=sin2t23,
                                    dm21=dm21, dm31=dm31, dcp=dcp)
-    res = Analysis.FitSystematics(nominal_syst=nominal_syst, N_dat=N_dat, tol=args.tol,
-                                  stat_chisq_fn=ChiSq_only_no_prior,
-                                  full_chisq_fn=ChiSq_with_penalty_with_error)
+    res = Analysis.FitSystematics(nominal_syst=nominal_syst, N_dat=N_dat, tol=args.tol)
 
 best_syst = res.x
 chi2 = res.fun

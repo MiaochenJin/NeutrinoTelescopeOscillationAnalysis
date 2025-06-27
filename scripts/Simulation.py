@@ -27,10 +27,6 @@ class Simulation:
             nu_mc = mc[(mc["MC_type"] != -1)]
             self._nu_mc = nu_mc
             self._mu_mc = mu_mc
-            self._mc_et_bin = (np.array(nu_mc["true_energy_bin_num"])).astype(int)
-            self._mc_er_bin = (np.array(nu_mc["reco_energy_bin_num"])).astype(int)
-            self._mc_ct_bin = (np.array(nu_mc["true_cos_zenith_bin_num"])).astype(int)
-            self._mc_cr_bin = (np.array(nu_mc["reco_cos_zenith_bin_num"])).astype(int)
             self._num_morphology = 3
             self._E_true_bins = np.load("../datafiles/ORCA/_E_true_bins.npy")
             self._E_reco_bins = np.load("../datafiles/ORCA/_E_reco_bins.npy")
@@ -128,7 +124,7 @@ class Simulation:
         return rate
 
     # obtain the mc event unweighted rate for all events given oscillation sterile parameters (phi * prob)
-    def GetOscillatedSterileRate(self, t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, d24, Ordering='normal'):
+    def GetOscillatedSterileRate(self, t12, t13, t23, t14, t24, t34, dm21, dm31, dm41, dcp, dcp24, Ordering='normal'):
         nsq_atm = nsq.nuSQUIDSAtm(self._flux_cth_nodes,self._flux_energy_nodes,self.flavors,nsq.NeutrinoType.both,interactions)
         nsq_atm.Set_rel_error(1.0e-4)
         nsq_atm.Set_abs_error(1.0e-4)
@@ -144,7 +140,7 @@ class Simulation:
         if Ordering!='normal': # change mass difference for IO setting
             AtmOsc.Set_SquareMassDifference(2,dm21-dm31)
         nsq_atm.Set_CPPhase(0, 2, dcp)
-        nsq_atm.Set_CPPhase(1, 3, d24)
+        nsq_atm.Set_CPPhase(1, 3, dcp24)
         nsq_atm.Set_initial_state(self._atm_initial_flux,nsq.Basis.flavor)
         nsq_atm.EvolveState()
         rate = np.zeros_like(self._mc_weights)
@@ -160,9 +156,11 @@ class Simulation:
         if hasattr(self, '_mc_uncertainty'):
             weighted_rate_var = (np.array(unweighted_rate) * self._livetime * self._unit_norm)**2 * self._mc_uncertainty
         else:
-            weighted_rate_var = np.zeros_like(w)
+            weighted_rate_var = np.zeros_like(weighted_rate)
+        
         if self._experiment == "ORCA":
             weighted_rate_var = (np.array(unweighted_rate) * self._livetime * self._unit_norm) ** 2 * self._mc_uncertainty
+
         shifted_E = self._mc_ereco * E_shift
         binned_events = np.array([])
         binned_errors = np.array([])
@@ -180,16 +178,20 @@ class Simulation:
         if len(self._cut_bins) > 0 : 
             binned_events = binned_events[self._cut_bins]
             binned_errors = binned_errors[self._cut_bins]
-        return binned_events, binned_errors
+        
+        if return_error:
+            return binned_events, binned_errors
+        return binned_events
     
     # bin energy and zenith for all morphologies, but only 2D
-    def BinWeightedRate2DEZ(self, unweighted_rate, E_shift = 1):
+    def BinWeightedRate2DEZ(self, unweighted_rate, E_shift = 1, return_error=False):
         weighted_rate = unweighted_rate * self._mc_weights * self._livetime * self._unit_norm
         shifted_E = self._mc_ereco * E_shift
         if hasattr(self, '_mc_uncertainty'):
             var = (np.array(unweighted_rate) * self._livetime * self._unit_norm)**2 * self._mc_uncertainty
         else:
-            var = np.zeros_like(w)
+            var = np.zeros_like(weighted_rate)
+
         binned_events = np.array([])
         binned_errors = np.array([])
         for m in range(self._num_morphology):
@@ -211,7 +213,10 @@ class Simulation:
         if len(self._cut_bins) > 0 :
             binned_events = binned_events[self._cut_bins]
             binned_errors = binned_errors[self._cut_bins]
-        return binned_events, binned_errors
+
+        if return_error:
+            return binned_events, binned_errors
+        return binned_events
 
     def BinWeightedRate2DLoE(self, unweighted_rate, R=6371.0, return_error = False):
         # 1) weight & live‐time
@@ -220,7 +225,7 @@ class Simulation:
 
         # 2) MC variance (only for ORCA; you already stored self._mc_uncertainty)
         if hasattr(self, '_mc_uncertainty'):
-            var = (np.array(unweighted_rate) * self._livetime * self._unit_norm)**2 * self._mc_uncertainty
+            var = (np.array(unweighted_rate) * self._livetime * self._unit_norm)**2 * np.abs(self._mc_uncertainty)
         else:
             var = np.zeros_like(w)
         LoE = np.array([-2.0 * R * self._mc_cthreco[i] / self._mc_ereco[i] for i in range(len(self._mc_cthreco))])
@@ -243,7 +248,9 @@ class Simulation:
         if len(self._cut_bins) > 0 :
             binned_events = binned_events[self._cut_bins]
             binned_errors = binned_errors[self._cut_bins]
-        return binned_events, binned_errors
+        if return_error:
+            return binned_events, binned_errors
+        return binned_events
 
     # computes the best fit 
     def ComputeBFRates(self, t12, t13, t23, dm21, dm31, dcp, Ordering='normal'):
@@ -257,29 +264,31 @@ class Simulation:
         if self._BF_rates is not None:
             print("Best fit unweighted rates is being set multiple times")
             exit(1)
-        self._BF_rates = self.GetOscillatedSterileRate(t12, t13, t23, dm21, dm31, dcp, t14, t24, t34, dm41, dcp24, Ordering=Ordering)
+        self._BF_rates = self.GetOscillatedSterileRate(t12, t13, t23, t14, t24, t34, dm21, dm31, dm41, dcp, dcp24, Ordering='normal')
 
     def BinBFRatesEnergyZenith(self):
         if self._BF_rates is None:
-            print("ComputeBFRatesLoE: please run ComputeBFRates first")
-        cut_num = self._cut_num
-        self._BF_rates_EZ_binned, self._BF_errors_EZ_binned = self.BinWeightedRate3DEZ(self._BF_rates, return_error = True) # no E shift needed
-        self._cut_bins = self._BF_rates_EZ_binned > cut_num # cut all bins with fewer than 4 events
-        self._BF_rates_EZ_binned = self._BF_rates_EZ_binned[self._cut_bins]
-        self._BF_errors_EZ_binned = self._BF_errors_EZ_binned[self._cut_bins]
-    
+            raise ValueError("Best fit rates are not computed yet, can't bin")
+        binned_bf, binned_err = self.BinWeightedRate3DEZ(self._BF_rates, return_error=True)
+        self._cut_bins = binned_bf > self._cut_num
+        self._BF_rates_weighted_binned = binned_bf[self._cut_bins]
+        self._BF_errors_weighted_binned = binned_err[self._cut_bins]
+
     def BinBFRates2DEZ(self):
         if self._BF_rates is None:
-            print("ComputeBFRatesLoE: please run ComputeBFRates first")
-        cut_num = self._cut_num
-        self._BF_rates_2DEZ_binned, self._BF_errors_2DEZ_binned = self.BinWeightedRate2DEZ(self._BF_rates) # no E shift needed
-        self._cut_bins = self._BF_rates_2DEZ_binned > cut_num # cut all bins with fewer than 4 events
-        self._BF_rates_2DEZ_binned = self._BF_rates_2DEZ_binned[self._cut_bins]
-        self._BF_errors_2DEZ_binned = self._BF_errors_2DEZ_binned[self._cut_bins]
+            raise ValueError("Best fit rates are not computed yet, can't bin")
+        binned_bf, binned_err = self.BinWeightedRate2DEZ(self._BF_rates, return_error=True)
+        self._cut_bins = binned_bf > self._cut_num
+        self._BF_rates_weighted_binned = binned_bf[self._cut_bins]
+        self._BF_errors_weighted_binned = binned_err[self._cut_bins]
 
     def BinBFRatesLoE(self):
-        if self._BF_rates is None: self.ComputeBFRates()
-        self._BF_rates_weighted_binned, self._BF_errors_weighted_binned = self.BinWeightedRate2DLoE(self._BF_rates)
+        if self._BF_rates is None:
+            raise ValueError("Best fit rates are not computed yet, can't bin")
+        binned_bf, binned_err = self.BinWeightedRate2DLoE(self._BF_rates, return_error=True)
+        self._cut_bins = binned_bf > self._cut_num
+        self._BF_rates_weighted_binned = binned_bf[self._cut_bins]
+        self._BF_errors_weighted_binned = binned_err[self._cut_bins]
 
     def BinHypothesis(self, unweighted_rate, **kw):
         """
@@ -289,23 +298,29 @@ class Simulation:
         Dispatches to the appropriate specialized binning function based on
         the analysis configuration.
         """
-        binning_method = self._analysis_binning
-        if binning_method == "3DEZ":
-            return self.BinWeightedRate3DEZ(unweighted_rate, **kw)
-        elif binning_method == "2DEZ":
-            return self.BinWeightedRate2DEZ(unweighted_rate, **kw)
-        elif binning_method == "LoE":
-            return self.BinWeightedRate2DLoE(unweighted_rate, **kw)
+        if self._analysis_binning == "3DEZ":
+            binned_events, binned_errors = self.BinWeightedRate3DEZ(unweighted_rate, **kw, return_error=True)
+        elif self._analysis_binning == "LoE":
+            binned_events, binned_errors = self.BinWeightedRate2DLoE(unweighted_rate, **kw, return_error=True)
+        elif self._analysis_binning == "2DEZ":
+            binned_events, binned_errors = self.BinWeightedRate2DEZ(unweighted_rate, **kw, return_error=True)
         else:
-            raise ValueError(f"Binning method '{binning_method}' not recognized.")
+            raise ValueError(f"Unknown binning for hypothesis: {self._analysis_binning}")
+        return binned_events, binned_errors
 
     def BinEvents(self, unweighted_rate, **kw):
         """
         Legacy binning method. Returns only the binned event counts, discarding
         the MC error. For new development, use BinHypothesis.
         """
-        binned_events, _ = self.BinHypothesis(unweighted_rate, **kw)
-        return binned_events
+        if self._analysis_binning == "3DEZ":
+            return self.BinWeightedRate3DEZ(unweighted_rate, **kw)
+        elif self._analysis_binning == "LoE":
+            return self.BinWeightedRate2DLoE(unweighted_rate, **kw)
+        elif self._analysis_binning == "2DEZ":
+            return self.BinWeightedRate2DEZ(unweighted_rate, **kw)
+        else:
+            raise ValueError(f"Unknown binning for hypothesis: {self._analysis_binning}")
     
     def ReturnBFBinned(self, **kw):
         """
@@ -313,19 +328,29 @@ class Simulation:
         """
         option = self._analysis_binning
         if option == "3DEZ":
-            return self._BF_rates_EZ_binned
+            return self._BF_rates_weighted_binned
         elif option == "2DEZ":
-            return self._BF_rates_2DEZ_binned
+            return self._BF_rates_weighted_binned
         elif option == "LoE":
             return self._BF_rates_weighted_binned
+        else:
+            raise ValueError("Binning not supported")
 
     def ReturnBFErrorBinned(self, **kw):
         """
         returns the binned best fit rate statistical error
         """
+        option = self._analysis_binning
         if self._BF_errors_weighted_binned is None:
             raise ValueError("Best-fit binned errors have not been computed yet.")
-        return self._BF_errors_weighted_binned
+        if option == "3DEZ":
+            return self._BF_errors_weighted_binned
+        elif option == "2DEZ":
+            return self._BF_errors_weighted_binned
+        elif option == "LoE":
+            return self._BF_errors_weighted_binned
+        else:
+            raise ValueError("Binning not supported")
 
     # method to deal with IC systematics
     def ReadDetSystTables(self, syst):
@@ -426,3 +451,51 @@ class Simulation:
         self.opt_eff_lateral = self.ReadDetSystTables('opt_eff_lateral')
         self.opt_eff_overall = self.ReadDetSystTables('opt_eff_overall')
         self.coin_fraction = self.ReadDetSystTables('coin_fraction')
+
+    def BinDataFromParquet(self, data_filename, binning_type='3DEZ', R=6371.0):
+        """
+        Loads data from a parquet file (assumed to be real data, not MC) and
+        bins it according to the specified binning type.
+        The 'weight' column in the parquet file is used directly.
+        """
+        data_df = pd.read_parquet(data_filename)
+
+        # Extract relevant columns
+        reco_energy = data_df['reco_energy']
+        reco_cos_zenith = np.cos(data_df['reco_zenith'])
+        morphology = data_df['pid']
+        weights = data_df['weight']
+
+        binned_events = np.array([])
+        if binning_type == '3DEZ':
+            for m in range(self._num_morphology):
+                morph_mask = (morphology == m)
+                bins = (self._E_reco_bins, self._cosT_reco_bins)
+                binned, _, _ = np.histogram2d(
+                    reco_energy[morph_mask],
+                    reco_cos_zenith[morph_mask],
+                    bins=bins,
+                    weights=weights[morph_mask]
+                )
+                binned_events = np.append(binned_events, binned)
+            
+        elif binning_type == 'LoE':
+            # Use np.divide to handle potential division by zero gracefully
+            LoE = np.divide(-2.0 * R * reco_cos_zenith, reco_energy, 
+                            out=np.full_like(reco_energy, np.inf), where=reco_energy!=0)
+
+            for m in range(self._num_morphology):
+                morph_mask = (morphology == m)
+                binned, _ = np.histogram(
+                    LoE[morph_mask],
+                    bins=self._loe_bins,
+                    weights=weights[morph_mask]
+                )
+                binned_events = np.append(binned_events, binned)
+        else:
+            raise ValueError(f"Unsupported binning type for data loading: {binning_type}")
+        
+        flat_binned_events = binned_events.flatten()
+        self._cut_bins = flat_binned_events > self._cut_num
+        
+        return flat_binned_events[self._cut_bins]

@@ -7,6 +7,7 @@ from ChiSq import *
 import click, yaml
 from scipy.optimize import minimize
 import os
+import inspect
 
 class Analysis:
     def __init__(self, experiment, livetime, filename, config = "../config/config.yaml"):
@@ -14,11 +15,29 @@ class Analysis:
         config_path = config
         full_config = yaml.safe_load(open(config_path, 'r'))
         config_dir = os.path.dirname(os.path.abspath(config_path))
+        if full_config.get("Livetime"):
+            livetime = full_config["Livetime"]
+        else:
+            livetime = 1.39
 
         mode = full_config["Oscillation"]
         self.binning = full_config["Binning"]
         self.data_fitting_settings = full_config.get("DataFitting", {'do_data_fitting': False})
         self.do_data_fitting = self.data_fitting_settings['do_data_fitting']
+        self.full_chisq_fn = None
+        if full_config.get("FullChiSqFn") == "ChiSq_Jac_with_penalty":
+            self.full_chisq_fn = ChiSq_Jac_with_penalty
+        elif full_config.get("FullChiSqFn") == "ChiSq_Jac_with_penalty_with_error":
+            self.full_chisq_fn = ChiSq_Jac_with_penalty_with_error
+        else:
+            raise ValueError(f"FullChiSqFn {full_config.get('FullChiSqFn')} not recognized")
+        
+        # Look up the chi-squared function by name from the ChiSq module
+        try:
+            self.stat_chisq_fn = globals()[full_config['StatChiSqFn']]
+        except KeyError:
+            raise ValueError(f"StatChiSqFn '{full_config.get('StatChiSqFn')}' not found in ChiSq module.")
+
         # set up experiment
         self.sim = Simulation(experiment, livetime, filename, mode = mode)
         self.sim._analysis_binning = self.binning
@@ -56,12 +75,21 @@ class Analysis:
         self.sim.SetInitialFlux()
 
         if self.do_data_fitting:
-            # In data fitting mode, load N_dat from files and do not pre-compute a model.
-            # The model (N_mod) will be calculated for each grid point in the run script.
-            data_dir_relative = self.data_fitting_settings['data_dir']
-            # Construct absolute path to data_dir relative to the config file's location
-            data_dir_absolute = os.path.join(config_dir, data_dir_relative)
-            self.N_dat_fixed = LoadBinnedData(data_dir_absolute, file_pattern="counts_*.csv")
+            data_parquet_path_relative = self.data_fitting_settings.get('data_parquet_file')
+            
+            if data_parquet_path_relative:
+                data_parquet_path_absolute = os.path.join(config_dir, data_parquet_path_relative)
+                self.N_dat_fixed = self.sim.BinDataFromParquet(
+                    data_parquet_path_absolute,
+                    binning_type=self.binning
+                )
+            else:
+                # In data fitting mode, load N_dat from files and do not pre-compute a model.
+                # The model (N_mod) will be calculated for each grid point in the run script.
+                data_dir_relative = self.data_fitting_settings['data_dir']
+                # Construct absolute path to data_dir relative to the config file's location
+                data_dir_absolute = os.path.join(config_dir, data_dir_relative)
+                self.N_dat_fixed = LoadBinnedData(data_dir_absolute, file_pattern="counts_*.csv")
         else:
             # In sensitivity mode, compute the best-fit rates as the model (N_mod).
             # N_dat will be calculated for each grid point in the run script.
@@ -102,28 +130,31 @@ class Analysis:
             nominal_syst: np.ndarray,
             N_dat: np.ndarray,
             tol: float,
-            stat_chisq_fn,       # e.g. ChiSq_only_no_prior
-            full_chisq_fn,       # e.g. ChiSq_Jac_with_penalty or any other χ²
             method: str = 'L-BFGS-B',
             chisq_kwargs: dict = None
         ):
             if chisq_kwargs is None:
                 chisq_kwargs = {}
 
+            # Helper to filter kwargs for a specific function
+            def get_valid_kwargs(func, all_kwargs):
+                sig = inspect.signature(func)
+                return {k: v for k, v in all_kwargs.items() if k in sig.parameters}
+
             # 1) compute stat-only χ² to scale tolerance
-            # Only pass arguments that stat_chisq_fn expects.
-            stat_chisq_args = chisq_kwargs.copy()
-            if 'N_mod_hypo_err' in stat_chisq_args:
-                del stat_chisq_args['N_mod_hypo_err']
-            statOnly = stat_chisq_fn(self, nominal_syst, N_dat, **stat_chisq_args)
+            stat_kwargs = get_valid_kwargs(self.stat_chisq_fn, chisq_kwargs)
+            statOnly = self.stat_chisq_fn(self, nominal_syst, N_dat, **stat_kwargs)
+
+            # Filter kwargs for the full chi-squared function
+            full_chisq_kwargs = get_valid_kwargs(self.full_chisq_fn, chisq_kwargs)
             
-            startChisq = full_chisq_fn(self, nominal_syst, N_dat, **chisq_kwargs)
+            startChisq = self.full_chisq_fn(self, nominal_syst, N_dat, **full_chisq_kwargs)
             # 2) wrap the full χ²
             def obj(syst):
-                return full_chisq_fn(self, syst, N_dat, **chisq_kwargs)
+                return self.full_chisq_fn(self, syst, N_dat, **full_chisq_kwargs)
             # 3) get analytic prior and bounds
             # The prior calculation only depends on the base model, not the systematics themselves
-            prior_kwargs = {'N_mod_hypo': chisq_kwargs.get('N_mod_hypo')}
+            prior_kwargs = get_valid_kwargs(syst_penalty_prior, chisq_kwargs)
             self.SystPrior, bounds = syst_penalty_prior(self, nominal_syst, N_dat, **prior_kwargs)
             # 4) adjust tolerance
             tol_adj = max(tol, np.sqrt(statOnly) * tol)
