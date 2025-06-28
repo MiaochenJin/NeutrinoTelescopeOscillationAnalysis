@@ -43,12 +43,13 @@ class FluxNormalization_Above1GeV(Systematics):
         base_rates = _get_base_rates(sim)
         nev = np.ones(sim._num_entries)
         nev[sim._mc_etrue>1] = x
-        return sim.BinEvents(nev * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         nev = np.zeros(sim._num_entries)
         nev[sim._mc_etrue>1] = 1
-        return sim.BinEvents(nev * base_rates) / sim.BinEvents(base_rates)
+        # The derivative of (A/B - 1) is (A'/B).
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
 
 class FluxNormalization_Below1GeV(Systematics):
     name = "FluxNormalization_Below1GeV"
@@ -58,12 +59,12 @@ class FluxNormalization_Below1GeV(Systematics):
         base_rates = _get_base_rates(sim)
         nev = np.ones(sim._num_entries)
         nev[sim._mc_etrue<1] = x
-        return sim.BinEvents(nev * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         nev = np.zeros(sim._num_entries)
         nev[sim._mc_etrue<1] = 1
-        return sim.BinEvents(nev * base_rates) / sim.BinEvents(base_rates)
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
 
 class FluxTilt(Systematics):
     name = "FluxTilt"
@@ -73,12 +74,12 @@ class FluxTilt(Systematics):
         base_rates = _get_base_rates(sim)
         E0Gam = 10 # GeV
         nev = (sim._mc_etrue / E0Gam) ** x
-        return sim.BinEvents(nev * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         E0Gam = 10 # GeV
         nev = (sim._mc_etrue / E0Gam)**x * np.log(sim._mc_etrue / E0Gam)
-        return sim.BinEvents(nev * base_rates) / sim.BinEvents(base_rates)
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
 
 class NuNubarRatio(Systematics):
     name = "NuNubarRatio"
@@ -88,12 +89,12 @@ class NuNubarRatio(Systematics):
         base_rates = _get_base_rates(sim)
         nnbar = np.ones(sim._num_entries)
         nnbar[sim._mc_nutype == 1] = x
-        return sim.BinEvents(nnbar * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(nnbar * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         nnbar = np.zeros(sim._num_entries)
         nnbar[sim._mc_nutype == 1] = 1
-        return sim.BinEvents(nnbar * base_rates) / sim.BinEvents(base_rates)
+        return sim.BinEvents(nnbar * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
 
 class FlavorRatio(Systematics):
     name = "FlavorRatio"
@@ -103,12 +104,12 @@ class FlavorRatio(Systematics):
         base_rates = _get_base_rates(sim)
         eovermu = np.ones(sim._num_entries)
         eovermu[np.abs(sim._mc_neuflavor)==0] = x
-        return sim.BinEvents(eovermu * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(eovermu * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         eovermu = np.zeros(sim._num_entries)
         eovermu[np.abs(sim._mc_neuflavor)==0] = 1
-        return sim.BinEvents(eovermu * base_rates) / sim.BinEvents(base_rates)
+        return sim.BinEvents(eovermu * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
 
 class ZenithFluxUp(Systematics):
     name = "ZenithFluxUp"
@@ -118,12 +119,12 @@ class ZenithFluxUp(Systematics):
         base_rates = _get_base_rates(sim)
         zenith = np.ones(sim._num_entries)
         zenith[sim._mc_cthtrue>=0] = zenith[sim._mc_cthtrue>=0] - x * np.tanh(sim._mc_cthtrue[sim._mc_cthtrue>=0])**2
-        return sim.BinEvents(zenith * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(zenith * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         zenith = np.zeros(sim._num_entries)
         zenith[sim._mc_cthtrue>=0] = - np.tanh(sim._mc_cthtrue[sim._mc_cthtrue>=0])**2
-        return sim.BinEvents(zenith * base_rates) / sim.BinEvents(base_rates)
+        return sim.BinEvents(zenith * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
     
 class ZenithFluxDown(Systematics):
     name = "ZenithFluxDown"
@@ -133,12 +134,12 @@ class ZenithFluxDown(Systematics):
         base_rates = _get_base_rates(sim)
         zenith = np.ones(sim._num_entries)
         zenith[sim._mc_cthtrue<0] = zenith[sim._mc_cthtrue<0] - x * np.tanh(sim._mc_cthtrue[sim._mc_cthtrue<0])**2
-        return sim.BinEvents(zenith * base_rates) / sim.BinEvents(base_rates) - 1
-    def diff(self, x, sim): 
+        return sim.BinEvents(zenith * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
         base_rates = _get_base_rates(sim)
         zenith = np.zeros(sim._num_entries)
         zenith[sim._mc_cthtrue<0] = - np.tanh(sim._mc_cthtrue[sim._mc_cthtrue<0])**2
-        return sim.BinEvents(zenith * base_rates) / sim.BinEvents(base_rates)
+        return sim.BinEvents(zenith * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
 
 # cross section systematics
 class XSecNuTau(Systematics):
@@ -406,3 +407,85 @@ class CoinFraction(Systematics):
         sim.ExpFracNuTauCC * sim.coin_fraction['nutauCC'] + \
         sim.ExpFracNC * sim.coin_fraction['NC']
         return d
+
+class ORCA_f_HPT(Systematics):
+    name = "ORCA_f_HPT"
+    nominal = 1.
+    sigma = .05
+    def apply(self, x, sim): 
+        base_rates = _get_base_rates(sim)
+        nev = np.ones(sim._num_entries)
+        nev[sim._mc_morphology==1] = x
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
+        base_rates = _get_base_rates(sim)
+        nev = np.zeros(sim._num_entries)
+        nev[sim._mc_morphology==1] = 1
+        # The derivative of (A/B - 1) is (A'/B).
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
+
+class ORCA_f_Shower(Systematics):
+    name = "ORCA_f_Shower"
+    nominal = 1.
+    sigma = .05
+    def apply(self, x, sim): 
+        base_rates = _get_base_rates(sim)
+        nev = np.ones(sim._num_entries)
+        nev[sim._mc_morphology==0] = x
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
+        base_rates = _get_base_rates(sim)
+        nev = np.zeros(sim._num_entries)
+        nev[sim._mc_morphology==0] = 1
+        # The derivative of (A/B - 1) is (A'/B).
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
+
+class ORCA_f_tauCC(Systematics):
+    name = "ORCA_f_tauCC"
+    nominal = 1.
+    sigma = .05
+    def apply(self, x, sim): 
+        base_rates = _get_base_rates(sim)
+        nev = np.ones(sim._num_entries)
+        nev[(sim._mc_current==1) & (np.abs(sim._mc_neuflavor) == 16)] = x
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
+        base_rates = _get_base_rates(sim)
+        nev = np.zeros(sim._num_entries)
+        nev[(sim._mc_current==1) & (np.abs(sim._mc_neuflavor) == 16)] = 1
+        # The derivative of (A/B - 1) is (A'/B).
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
+
+class ORCA_f_NC(Systematics):
+    name = "ORCA_f_NC"
+    nominal = 1.
+    sigma = .05
+    def apply(self, x, sim): 
+        base_rates = _get_base_rates(sim)
+        nev = np.ones(sim._num_entries)
+        nev[(sim._mc_current==0)] = x
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
+        base_rates = _get_base_rates(sim)
+        nev = np.zeros(sim._num_entries)
+        nev[(sim._mc_current==0)] = 1
+        # The derivative of (A/B - 1) is (A'/B).
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)
+
+class ORCA_f_HE(Systematics):
+    name = "ORCA_f_HE"
+    nominal = 1.
+    sigma = .05
+    def apply(self, x, sim): 
+        base_rates = _get_base_rates(sim)
+        nev = np.ones(sim._num_entries)
+        qual = ((sim._mc_etrue>500) & (sim._mc_current==1)) | ((sim._mc_etrue>100) & (sim._mc_current==0))
+        nev[qual] = x
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False) - 1
+    def diff(self, x, sim):
+        base_rates = _get_base_rates(sim)
+        nev = np.zeros(sim._num_entries)
+        qual = ((sim._mc_etrue>500) & (sim._mc_current==1)) | ((sim._mc_etrue>100) & (sim._mc_current==0))
+        nev[qual] = 1
+        # The derivative of (A/B - 1) is (A'/B).
+        return sim.BinEvents(nev * base_rates, include_muons=False) / sim.BinEvents(base_rates, include_muons=False)

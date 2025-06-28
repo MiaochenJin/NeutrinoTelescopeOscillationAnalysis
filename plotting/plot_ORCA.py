@@ -282,12 +282,12 @@ for plot_idx, morph_idx in enumerate(plot_order):
     ax.axhline(1.0, label='No Oscillation', color='gray', linestyle=':')
     
     nufit_ratio_slice = ratio_nufit[start_idx:end_idx]
-    y_step_nufit = np.append(nufit_ratio_slice, nufit_ratio_slice[-1])
-    ax.step(sim._loe_bins, y_step_nufit, where='pre', label='NuFit', color='blue', linestyle='--')
+    ax.hist(bin_centers_loe, bins=sim._loe_bins, weights=nufit_ratio_slice,
+            histtype='step', color='b', ls='--', label='NuFit')
 
     bf_ratio_slice = ratio_best_fit[start_idx:end_idx]
-    y_step_bf = np.append(bf_ratio_slice, bf_ratio_slice[-1])
-    ax.step(sim._loe_bins, y_step_bf, where='pre', label='Best Fit', color='red')
+    ax.hist(bin_centers_loe, bins=sim._loe_bins, weights=bf_ratio_slice,
+            histtype='step', color='r', label='Best Fit')
 
     ax.set_ylabel('Ratio to No Oscillation')
     ax.set_title(f'Morphology: {morph_labels[morph_idx]}')

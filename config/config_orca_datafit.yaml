@@ -1,7 +1,7 @@
 Oscillation : "Standard"
 Binning : "3DEZ"
 Livetime : 1
-FullChiSqFn: "ChiSq_Jac_with_penalty"
+FullChiSqFn: "ChiSq_with_penalty_with_error"
 StatChiSqFn: "ChiSq_only_no_prior"
 BestFit: {
   s2t12: 0.303,
@@ -34,7 +34,12 @@ DetSyst : {
   OptEffHeadon: 0, 
   OptEffLateral: 0,
   OptEffOverall: 0, 
-  CoinFraction: 0
+  CoinFraction: 0,
+  ORCA_f_HPT: 1,
+  ORCA_f_Shower: 1,
+  ORCA_f_tauCC: 1,
+  ORCA_f_NC: 1,
+  ORCA_f_HE: 1
 }
 
 XsecSyst: {

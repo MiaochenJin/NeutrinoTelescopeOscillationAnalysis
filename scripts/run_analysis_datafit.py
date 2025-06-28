@@ -48,7 +48,7 @@ except IndexError:
 
 # set up analysis object
 MCfile = args.infile
-orca = '../datafiles/ORCA/ORCA_MC_dataverse.parquet'
+orca = '../datafiles/ORCA/ORCA_MC_dataverse_with_muons.parquet'
 config = "../config/config_orca_datafit.yaml"
 Analysis = Analysis(experiment = "ORCA", livetime = 1.39, filename = orca, config = config)
 nominal_syst = np.array(Analysis.systNominal)

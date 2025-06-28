@@ -27,8 +27,8 @@ class Analysis:
         self.full_chisq_fn = None
         if full_config.get("FullChiSqFn") == "ChiSq_Jac_with_penalty":
             self.full_chisq_fn = ChiSq_Jac_with_penalty
-        elif full_config.get("FullChiSqFn") == "ChiSq_Jac_with_penalty_with_error":
-            self.full_chisq_fn = ChiSq_Jac_with_penalty_with_error
+        elif full_config.get("FullChiSqFn") == "ChiSq_with_penalty_with_error":
+            self.full_chisq_fn = ChiSq_with_penalty_with_error
         else:
             raise ValueError(f"FullChiSqFn {full_config.get('FullChiSqFn')} not recognized")
         
@@ -41,6 +41,8 @@ class Analysis:
         # set up experiment
         self.sim = Simulation(experiment, livetime, filename, mode = mode)
         self.sim._analysis_binning = self.binning
+        if self.sim._experiment == "ORCA":
+            self.sim.BinMuons()
         syst_settings = {}
         syst_settings.update(full_config.get('FluxSyst', {}))
         syst_settings.update(full_config.get('DetSyst', {}))
@@ -51,14 +53,18 @@ class Analysis:
             FluxTilt, NuNubarRatio, FlavorRatio,
             ZenithFluxUp, ZenithFluxDown
         ]
-        DET_SYST = [
+        DET_SYST_IC = [
             IceAbsorption, IceScattering, OffSet,
             OptEffHeadon, OptEffLateral, OptEffOverall,
             CoinFraction
         ]
+        DET_SYST_ORCA = [
+            ORCA_f_HPT, ORCA_f_Shower, ORCA_f_tauCC, ORCA_f_NC,
+            ORCA_f_HE
+        ]
         XSEC_SYST = [XSecNuTau, NCoverCC, AxialMass, NCHad, 
             DIS, CCQE, CCQENuBarNu, CCQEMuE]
-
+        DET_SYST = DET_SYST_IC + DET_SYST_ORCA
         all_systs = FLUX_SYST + DET_SYST + XSEC_SYST
         
         self.syst = [

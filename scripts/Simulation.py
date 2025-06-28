@@ -84,6 +84,8 @@ class Simulation:
         self._BF_rates = None
         self._BF_rates_weighted_binned = None
         self._BF_errors_weighted_binned = None
+        self._muon_bkg_binned = None
+        self._muon_bkg_err_binned = None
 
     # set up the atmospheric initial flux object
     def SetInitialFlux(self):
@@ -151,7 +153,7 @@ class Simulation:
         return rate
         
     # the simple binning to bin events into only 3 bins
-    def BinWeightedRate3DEZ(self, unweighted_rate, E_shift = 1, return_error = False):
+    def BinWeightedRate3DEZ(self, unweighted_rate, E_shift = 1, return_error = False, include_muons=True):
         weighted_rate = unweighted_rate * self._mc_weights * self._livetime * self._unit_norm
         if hasattr(self, '_mc_uncertainty'):
             weighted_rate_var = (np.array(unweighted_rate) * self._livetime * self._unit_norm)**2 * self._mc_uncertainty
@@ -173,9 +175,14 @@ class Simulation:
             werr_m = weighted_rate_var[morph]
             error, _, _ = np.histogram2d(shifted_E[morph], self._mc_cthreco[morph], bins = bins, weights = werr_m)
             binned_errors = np.append(binned_errors, error)
-        binned_events.reshape(-1)
-        binned_errors.reshape(-1)
-        if len(self._cut_bins) > 0 : 
+        binned_events = binned_events.flatten()
+        binned_errors = binned_errors.flatten()
+
+        if self._experiment == 'ORCA' and self._muon_bkg_binned is not None and include_muons:
+            binned_events += self._muon_bkg_binned
+            binned_errors += self._muon_bkg_err_binned
+
+        if len(self._cut_bins) > 0 :
             binned_events = binned_events[self._cut_bins]
             binned_errors = binned_errors[self._cut_bins]
         
@@ -184,7 +191,7 @@ class Simulation:
         return binned_events
     
     # bin energy and zenith for all morphologies, but only 2D
-    def BinWeightedRate2DEZ(self, unweighted_rate, E_shift = 1, return_error=False):
+    def BinWeightedRate2DEZ(self, unweighted_rate, E_shift = 1, return_error=False, include_muons=True):
         weighted_rate = unweighted_rate * self._mc_weights * self._livetime * self._unit_norm
         shifted_E = self._mc_ereco * E_shift
         if hasattr(self, '_mc_uncertainty'):
@@ -208,8 +215,13 @@ class Simulation:
             err = np.concatenate((binned_e_err, binned_z_err), axis = 0)
             binned_events = np.append(binned_events, binned)
             binned_errors = np.append(binned_errors, err)
-        binned_events.reshape(-1)
-        binned_errors.reshape(-1)
+        binned_events = binned_events.flatten()
+        binned_errors = binned_errors.flatten()
+
+        if self._experiment == 'ORCA' and self._muon_bkg_binned is not None and include_muons:
+            binned_events += self._muon_bkg_binned
+            binned_errors += self._muon_bkg_err_binned
+
         if len(self._cut_bins) > 0 :
             binned_events = binned_events[self._cut_bins]
             binned_errors = binned_errors[self._cut_bins]
@@ -218,7 +230,7 @@ class Simulation:
             return binned_events, binned_errors
         return binned_events
 
-    def BinWeightedRate2DLoE(self, unweighted_rate, R=6371.0, return_error = False):
+    def BinWeightedRate2DLoE(self, unweighted_rate, R=6371.0, return_error = False, include_muons=True):
         # 1) weight & live‐time
         LoE_bins = self._loe_bins
         w = np.array(unweighted_rate) * self._mc_weights * self._livetime * self._unit_norm
@@ -243,8 +255,13 @@ class Simulation:
             errs,   _ = np.histogram(a, bins=LoE_bins, weights=vr)
             binned_events = np.append(binned_events, binned)
             binned_errors = np.append(binned_errors, errs)
-        binned_events.reshape(-1)
-        binned_errors.reshape(-1)
+        binned_events = binned_events.flatten()
+        binned_errors = binned_errors.flatten()
+
+        if self._experiment == 'ORCA' and self._muon_bkg_binned is not None and include_muons:
+            binned_events += self._muon_bkg_binned
+            binned_errors += self._muon_bkg_err_binned
+
         if len(self._cut_bins) > 0 :
             binned_events = binned_events[self._cut_bins]
             binned_errors = binned_errors[self._cut_bins]
@@ -308,11 +325,13 @@ class Simulation:
             raise ValueError(f"Unknown binning for hypothesis: {self._analysis_binning}")
         return binned_events, binned_errors
 
-    def BinEvents(self, unweighted_rate, **kw):
+    def BinEvents(self, unweighted_rate, include_muons=True, **kw):
         """
         Legacy binning method. Returns only the binned event counts, discarding
         the MC error. For new development, use BinHypothesis.
+        Can optionally exclude the muon background for systematics calculations.
         """
+        kw['include_muons'] = include_muons
         if self._analysis_binning == "3DEZ":
             return self.BinWeightedRate3DEZ(unweighted_rate, **kw)
         elif self._analysis_binning == "LoE":
@@ -351,6 +370,95 @@ class Simulation:
             return self._BF_errors_weighted_binned
         else:
             raise ValueError("Binning not supported")
+
+    def BinMuons(self, R=6371.0):
+        """
+        Bins the atmospheric muon background for ORCA.
+        This should be called once after the analysis binning is set.
+        """
+        if self._experiment != 'ORCA' or self._mu_mc is None:
+            return
+
+        # Extract relevant columns from the muon MC dataframe
+        reco_energy = self._mu_mc['reco_energy']
+        reco_cos_zenith = np.cos(self._mu_mc['reco_zenith'])
+        morphology = self._mu_mc['pid']
+        # Per user feedback, muon weights are pre-scaled and should be used directly.
+        weights = self._mu_mc['weight']
+        
+        # The user mentioned the format is the same as the data file.
+        # The neutrino MC has 'weight_variance', let's assume the same for muon MC.
+        if 'weight_variance' in self._mu_mc.columns:
+            # Variance is also pre-scaled.
+            variance = self._mu_mc['weight_variance']
+        else:
+            # If variance is not present, fall back to Poisson assumption (sum of w^2)
+            # For weighted histograms, this is the correct variance estimator.
+            variance = weights**2
+
+        binned_events = np.array([])
+        binned_errors = np.array([])
+
+        if self._analysis_binning == '3DEZ':
+            for m in range(self._num_morphology):
+                morph_mask = (morphology == m)
+                bins = (self._E_reco_bins, self._cosT_reco_bins)
+                binned, _, _ = np.histogram2d(
+                    reco_energy[morph_mask],
+                    reco_cos_zenith[morph_mask],
+                    bins=bins,
+                    weights=weights[morph_mask]
+                )
+                errs, _, _ = np.histogram2d(
+                    reco_energy[morph_mask],
+                    reco_cos_zenith[morph_mask],
+                    bins=bins,
+                    weights=variance[morph_mask]
+                )
+                binned_events = np.append(binned_events, binned)
+                binned_errors = np.append(binned_errors, errs)
+
+        elif self._analysis_binning == 'LoE':
+            LoE = np.divide(-2.0 * R * reco_cos_zenith, reco_energy,
+                            out=np.full_like(reco_energy, np.inf), where=reco_energy != 0)
+            for m in range(self._num_morphology):
+                morph_mask = (morphology == m)
+                binned, _ = np.histogram(
+                    LoE[morph_mask],
+                    bins=self._loe_bins,
+                    weights=weights[morph_mask]
+                )
+                errs, _ = np.histogram(
+                    LoE[morph_mask],
+                    bins=self._loe_bins,
+                    weights=variance[morph_mask]
+                )
+                binned_events = np.append(binned_events, binned)
+                binned_errors = np.append(binned_errors, errs)
+                
+        elif self._analysis_binning == '2DEZ':
+            for m in range(self._num_morphology):
+                morph_mask = (morphology == m)
+                e_bins = self._E_reco_bins
+                z_bins = self._cosT_reco_bins
+                
+                binned_e, _ = np.histogram(reco_energy[morph_mask], bins=e_bins, weights=weights[morph_mask])
+                binned_e_err, _ = np.histogram(reco_energy[morph_mask], bins=e_bins, weights=variance[morph_mask])
+                
+                binned_z, _ = np.histogram(reco_cos_zenith[morph_mask], bins=z_bins, weights=weights[morph_mask])
+                binned_z_err, _ = np.histogram(reco_cos_zenith[morph_mask], bins=z_bins, weights=variance[morph_mask])
+                
+                binned = np.concatenate((binned_e, binned_z), axis=0)
+                err = np.concatenate((binned_e_err, binned_z_err), axis=0)
+                
+                binned_events = np.append(binned_events, binned)
+                binned_errors = np.append(binned_errors, err)
+        else:
+            # Do nothing if binning is not recognized, or raise error
+            return
+
+        self._muon_bkg_binned = binned_events.flatten()
+        self._muon_bkg_err_binned = binned_errors.flatten()
 
     # method to deal with IC systematics
     def ReadDetSystTables(self, syst):
@@ -464,6 +572,7 @@ class Simulation:
         reco_energy = data_df['reco_energy']
         reco_cos_zenith = np.cos(data_df['reco_zenith'])
         morphology = data_df['pid']
+        # Per user feedback, data weights are pre-scaled and should be used directly.
         weights = data_df['weight']
 
         binned_events = np.array([])

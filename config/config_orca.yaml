@@ -9,7 +9,7 @@ BestFit: {
   m31: 2.511e-3, 
   dCP: 1.36
 }
-FullChiSqFn: "ChiSq_Jac_with_penalty"
+FullChiSqFn: "ChiSq_with_penalty_with_error"
 StatChiSqFn: "ChiSq_only_no_prior"
 
 DataFitting: {
