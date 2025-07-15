@@ -42,6 +42,8 @@ class Simulation:
 			self._E_reco_bins = self._E_true_bins
 			self._cosT_true_bins = np.array([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 			self._cosT_reco_bins = np.array([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+			self._mc_interaction = np.array(self._nu_mc["interaction_type"][condition])
+
 		# MC event information
 		condition = (self._nu_mc["true_energy"] > 1) & (self._nu_mc["true_energy"] < 1e3) & (self._nu_mc["reco_energy"] > 1)
 		self._num_entries = len(self._nu_mc[condition])
@@ -54,7 +56,6 @@ class Simulation:
 		self._mc_weights = np.array(self._nu_mc["weight"][condition])
 		self._mc_current = np.array(self._nu_mc["current_type"][condition])
 		self._mc_morphology = np.array(self._nu_mc["pid"][condition])
-		self._mc_interaction = np.array(self._nu_mc["interaction_type"][condition])
 
 		# experiment constants
 		self._livetime = livetime
