@@ -34,6 +34,8 @@ class Simulation:
             self._loe_bins = np.load("../datafiles/ORCA/_LoE_bins.npy")
             self._cosT_reco_bins = np.linspace(-1, 0, 11)
             self._cut_num = 1e-2
+            condition = (self._nu_mc["true_energy"] >= 0) & (self._nu_mc["true_energy"] < 1e5) & (self._nu_mc["reco_energy"] >= 0)
+
         elif experiment == 'IC':
             mc = pd.read_csv(filename)
             self._nu_mc = mc
@@ -43,9 +45,10 @@ class Simulation:
             self._E_reco_bins = self._E_true_bins
             self._cosT_true_bins = np.array([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
             self._cosT_reco_bins = np.array([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-            self._cut_num = 4
+            self._cut_num = 4 # Reverted to original value
+            condition = (self._nu_mc["true_energy"] > 1) & (self._nu_mc["true_energy"] < 1e3) & (self._nu_mc["reco_energy"] > 1)
+
         # MC event information
-        condition = (self._nu_mc["true_energy"] >= 0) & (self._nu_mc["true_energy"] < 1e5) & (self._nu_mc["reco_energy"] >= 0)
         self._num_entries = len(self._nu_mc[condition])
         self._mc_etrue = np.array(self._nu_mc["true_energy"][condition])
         self._mc_cthtrue = np.array(np.cos(self._nu_mc["true_zenith"])[condition])
@@ -67,12 +70,12 @@ class Simulation:
         self._unit = nsq.Const().GeV # energy unit definitions
         # flux related settings
         self._atm_initial_flux = None
-        self._flux_emin = 1 * self._unit
+        self._flux_emin = 1e-1 * self._unit
         self._flux_emax = 1e4 * self._unit
         self._flux_enodes = 100
         self._flux_cthmin = -1.0
         self._flux_cthmax = 1.0
-        self._flux_cnodes = 80
+        self._flux_cnodes = 40 # Reverted to original value for consistency
         self._flux_energy_nodes = None
         self._flux_cth_nodes = None
         # energy and zenith binning
@@ -115,13 +118,11 @@ class Simulation:
         nsq_atm.Set_SquareMassDifference(1, dm21)
         nsq_atm.Set_SquareMassDifference(2, dm31)
         if Ordering!='normal': # change mass difference for IO setting
-            AtmOsc.Set_SquareMassDifference(2,dm21-dm31)
+            nsq_atm.Set_SquareMassDifference(2,dm21-dm31)
         nsq_atm.Set_CPPhase(0, 2, dcp)
         nsq_atm.Set_initial_state(self._atm_initial_flux,nsq.Basis.flavor)
         nsq_atm.EvolveState() # progress bar is hidden here
         rate = np.zeros_like(self._mc_weights)
-        # for i in range(len(rate)):
-        # 	rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * self._unit), int(self._mc_nutype[i]))
         rate = list(map(nsq_atm.EvalFlavor, (self._mc_neuflavor.astype(int).tolist()), (self._mc_cthtrue.astype(float).tolist()), (self._mc_etrue*self._unit).astype(float).tolist(), (self._mc_nutype.astype(int).tolist()), repeat(True)))
         return rate
 
@@ -140,7 +141,7 @@ class Simulation:
         nsq_atm.Set_SquareMassDifference(2, dm31)
         nsq_atm.Set_SquareMassDifference(3, dm41)
         if Ordering!='normal': # change mass difference for IO setting
-            AtmOsc.Set_SquareMassDifference(2,dm21-dm31)
+            nsq_atm.Set_SquareMassDifference(2,dm21-dm31)
         nsq_atm.Set_CPPhase(0, 2, dcp)
         nsq_atm.Set_CPPhase(1, 3, dcp24)
         nsq_atm.Set_initial_state(self._atm_initial_flux,nsq.Basis.flavor)
@@ -149,7 +150,6 @@ class Simulation:
         # for i in range(len(rate)):
         # 	rate[i] = nsq_atm.EvalFlavor(int(self._mc_neuflavor[i]), float(self._mc_cthtrue[i]), float(self._mc_etrue[i] * units.GeV), int(self._mc_nutype[i]))
         rate = list(map(nsq_atm.EvalFlavor, (self._mc_neuflavor.astype(int).tolist()), (self._mc_cthtrue.astype(float).tolist()), (self._mc_etrue*self._unit).astype(float).tolist(), (self._mc_nutype.astype(int).tolist()), repeat(True)))
-        
         return rate
         
     # the simple binning to bin events into only 3 bins
@@ -165,18 +165,21 @@ class Simulation:
 
         shifted_E = self._mc_ereco * E_shift
         binned_events = np.array([])
-        binned_errors = np.array([])
+        if hasattr(self, '_mc_uncertainty'):
+            binned_errors = np.array([])
         for m in range(self._num_morphology):
             morph = (self._mc_morphology == m)
             wrate_m = weighted_rate[morph]
             bins = (self._E_reco_bins, self._cosT_reco_bins)
             binned, _, _ = np.histogram2d(shifted_E[morph], self._mc_cthreco[morph], bins = bins, weights = wrate_m)
             binned_events = np.append(binned_events, binned)
-            werr_m = weighted_rate_var[morph]
-            error, _, _ = np.histogram2d(shifted_E[morph], self._mc_cthreco[morph], bins = bins, weights = werr_m)
-            binned_errors = np.append(binned_errors, error)
+            if hasattr(self, '_mc_uncertainty'):
+                werr_m = weighted_rate_var[morph]
+                error, _, _ = np.histogram2d(shifted_E[morph], self._mc_cthreco[morph], bins = bins, weights = werr_m)
+                binned_errors = np.append(binned_errors, error)
         binned_events = binned_events.flatten()
-        binned_errors = binned_errors.flatten()
+        if hasattr(self, '_mc_uncertainty'):
+            binned_errors = binned_errors.flatten()
 
         if self._experiment == 'ORCA' and self._muon_bkg_binned is not None and include_muons:
             binned_events += self._muon_bkg_binned
@@ -184,7 +187,8 @@ class Simulation:
 
         if len(self._cut_bins) > 0 :
             binned_events = binned_events[self._cut_bins]
-            binned_errors = binned_errors[self._cut_bins]
+            if hasattr(self, '_mc_uncertainty'):
+                binned_errors = binned_errors[self._cut_bins]
         
         if return_error:
             return binned_events, binned_errors
@@ -278,6 +282,7 @@ class Simulation:
 
     # computes the best fit 
     def ComputeBFRatesSterile(self, t12, t13, t23, t14, t24, t34, dm21, dm31, dm41, dcp, dcp24, Ordering='normal'):
+        print("in compute BF rates sterile")
         if self._BF_rates is not None:
             print("Best fit unweighted rates is being set multiple times")
             exit(1)
@@ -286,10 +291,15 @@ class Simulation:
     def BinBFRatesEnergyZenith(self):
         if self._BF_rates is None:
             raise ValueError("Best fit rates are not computed yet, can't bin")
-        binned_bf, binned_err = self.BinWeightedRate3DEZ(self._BF_rates, return_error=True)
-        self._cut_bins = binned_bf > self._cut_num
-        self._BF_rates_weighted_binned = binned_bf[self._cut_bins]
-        self._BF_errors_weighted_binned = binned_err[self._cut_bins]
+        if hasattr(self, '_mc_uncertainty'):
+            binned_bf, binned_err = self.BinWeightedRate3DEZ(self._BF_rates, return_error=True)
+            self._cut_bins = binned_bf > self._cut_num
+            self._BF_rates_weighted_binned = binned_bf[self._cut_bins]
+            self._BF_errors_weighted_binned = binned_err[self._cut_bins]
+        else:
+            binned_bf = self.BinWeightedRate3DEZ(self._BF_rates)
+            self._cut_bins = binned_bf > self._cut_num
+            self._BF_rates_weighted_binned = binned_bf[self._cut_bins]
 
     def BinBFRates2DEZ(self):
         if self._BF_rates is None:

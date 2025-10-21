@@ -14,7 +14,8 @@ BestFit: {
 
 DataFitting: {
   do_data_fitting: true,
-  data_parquet_file: "../datafiles/ORCA/ORCA_data_dataverse.parquet"
+  data_parquet_file: "../datafiles/ORCA/ORCA_data_dataverse.parquet",
+  use_analytic_priors: false
 }
 
 FluxSyst : {
@@ -35,11 +36,14 @@ DetSyst : {
   OptEffLateral: 0,
   OptEffOverall: 0, 
   CoinFraction: 0,
+  ORCA_f_all: 1,
   ORCA_f_HPT: 1,
   ORCA_f_Shower: 1,
   ORCA_f_tauCC: 1,
   ORCA_f_NC: 1,
-  ORCA_f_HE: 1
+  ORCA_f_HE: 1,
+  ORCA_f_mu: 1,
+  ORCA_E_shift: 1
 }
 
 XsecSyst: {

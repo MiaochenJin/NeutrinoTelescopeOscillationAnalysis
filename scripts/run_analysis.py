@@ -28,6 +28,31 @@ def parse_grid(arglist, default_val):
         return [default_val]  # No scan → use single value (best-fit)
     return np.linspace(arglist[0], arglist[1], int(arglist[2]))
 
+# Set up mixing parameters
+bfpoint = yaml.safe_load(open(args.config, 'r'))["BestFit"]
+
+t12_bf = np.arcsin(np.sqrt(bfpoint["s2t12"]))
+t13_bf = np.arcsin(np.sqrt(bfpoint['s2t13']))
+t23_bf = np.arcsin(np.sqrt(bfpoint['s2t23']))
+s2t12_bf = bfpoint["s2t12"]
+s2t13_bf = bfpoint['s2t13']
+s2t23_bf = bfpoint['s2t23']
+m21_bf = bfpoint['m21']
+m31_bf = bfpoint['m31']
+dCP_bf = bfpoint['dCP']
+
+try:
+    t14_bf = np.arcsin(np.sqrt(bfpoint["s2t14"]))
+    t24_bf = np.arcsin(np.sqrt(bfpoint['s2t24']))
+    t34_bf = np.arcsin(np.sqrt(bfpoint['s2t34']))
+    s2t14_bf = bfpoint["s2t14"]
+    s2t24_bf = bfpoint['s2t24']
+    s2t34_bf = bfpoint['s2t34']
+    m41_bf = bfpoint['m41']
+    dCP24_bf = bfpoint['dCP24']
+except:
+    pass
+
 # Build full parameter grid
 sin2t12_vals = parse_grid(args.sin2theta12, s2t12_bf)
 sin2t13_vals = parse_grid(args.sin2theta13, s2t13_bf)

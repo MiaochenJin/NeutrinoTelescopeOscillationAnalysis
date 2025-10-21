@@ -1,0 +1,41 @@
+Oscillation : "Standard"
+
+BestFit: {
+  s2t12: 0.303,
+  s2t13: 0.022,
+  s2t23: 0.572, 
+  m21: 7.41e-5, 
+  m31: 2.511e-3, 
+  dCP: 1.36
+}
+
+FluxSyst : {
+  FluxNormalization_Below1GeV: 1,
+  FluxNormalization_Above1GeV: 1,
+  FluxTilt: 1,
+  NuNubarRatio: 1,
+  FlavorRatio: 1,
+  ZenithFluxUp: 1,
+  ZenithFluxDown: 1
+}
+
+DetSyst : {
+  IceAbsorption: 1, 
+  IceScattering: 1, 
+  OffSet: 1, 
+  OptEffHeadon: 1, 
+  OptEffLateral: 1,
+  OptEffOverall: 1, 
+  CoinFraction: 1
+}
+
+XsecSyst: {
+  XSecNuTau : 1, 
+  NCoverCC : 1, 
+  AxialMass : 1, 
+  NCHad : 1, 
+  DIS: 0, 
+  CCQE: 0, 
+  CCQENuBarNu: 0, 
+  CCQEMuE: 0
+}
